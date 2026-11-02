@@ -45,6 +45,7 @@
     border-bottom: 4px solid var(--line);
     padding: calc(env(safe-area-inset-top) + 12px) 16px 10px;
     text-align: center;
+    position: relative;
   }
   header h1 { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
   .seg {
@@ -71,17 +72,11 @@
   .view { display: none; }
   .view.on { display: block; }
 
-  .badges { display: flex; gap: 8px; margin-bottom: 12px; }
-  .badge {
-    flex: 1;
-    text-align: center;
-    background: var(--green-bg);
-    color: var(--green);
-    font-size: 12.5px;
-    font-weight: 700;
-    padding: 7px 4px;
-    border-radius: 999px;
-    white-space: nowrap;
+  /* demo 用：右上角 GPS 範圍設定 */
+  .gear {
+    position: absolute; right: 12px; top: calc(env(safe-area-inset-top) + 10px);
+    width: 32px; height: 32px; border: 0; border-radius: 50%;
+    background: none; color: #b0b0b5; font-size: 19px; cursor: pointer;
   }
 
   /* ---------- scan view ---------- */
@@ -278,12 +273,43 @@
   .result .k { color: var(--sub); display: inline-block; width: 72px; }
   .punch { font-size: 18px; font-weight: 800; color: var(--green); margin: -8px 0 18px; }
   .sheet .btn.cancel { background: #f2f2f7; color: var(--text); }
+  .steps {
+    background: var(--bg); border-radius: 14px;
+    padding: 8px 14px; margin: 16px 0 14px; text-align: left; font-size: 14px;
+  }
+  .step { display: flex; gap: 10px; padding: 7px 0; }
+  .step + .step { border-top: 1px solid rgba(0,0,0,.06); }
+  .step .st {
+    flex: none; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%;
+    display: grid; place-items: center; font-size: 13px; font-weight: 800; font-style: normal;
+    color: #fff; background: #c7c7cc;
+  }
+  .step.ok .st { background: var(--green); }
+  .step.alert .st { background: var(--alert); }
+  .step.run .st { background: none; border: 2.5px solid var(--ring); border-top-color: transparent; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .step .d { color: var(--sub); font-size: 12.5px; line-height: 1.6; margin-top: 1px; }
+  .tag { font-weight: 800; }
+  .tag.in { color: var(--green); }
+  .tag.out { color: var(--alert); }
+  .sheet .icon.flow-ic { width: 96px; height: 96px; margin: 18px auto 12px; cursor: default; }
+  .spin-ic { animation: spin 1s linear infinite; }
+  .flow-msg { font-size: 18px; font-weight: 800; color: var(--sub); min-height: 26px; }
+  .flow-msg.ok { color: var(--green); }
+  .warn { font-size: 13px; color: var(--alert); margin-top: 4px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .warn i {
+    width: 16px; height: 16px; border-radius: 50%; background: var(--alert); color: #fff;
+    font-size: 11px; font-weight: 800; font-style: normal; display: grid; place-items: center;
+  }
+  .status .bad { color: #e5484d; }
+  :root { --alert: #e5484d; }   /* 警示色：與打卡紀錄的「位置異常」同為紅色 */
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1 id="title">掃碼打卡</h1>
+    <button class="gear" data-range aria-label="GPS 範圍設定" title="GPS 範圍 300 公尺">⚙</button>
     <div class="seg">
       <button data-mode="scan" class="on">掃碼打卡</button>
       <button data-mode="nfc">感應打卡</button>
@@ -307,10 +333,6 @@
         <div class="scanline"></div>
         <div class="hint">對準門店 QR Code</div>
       </div>
-      <div class="badges" style="margin-top:14px">
-        <div class="badge">✓ 已連線門店 Wi-Fi</div>
-        <div class="badge">✓ 位置在門店範圍內</div>
-      </div>
       <div class="actions">
         <button class="btn primary" id="btn-cam">開啟相機掃描</button>
       </div>
@@ -320,10 +342,6 @@
 
     <!-- 感應 -->
     <section class="view" id="v-nfc">
-      <div class="badges">
-        <div class="badge">✓ 已連線門店 Wi-Fi</div>
-        <div class="badge">✓ 位置在門店範圍內</div>
-      </div>
       <div class="idcard">
         <div class="brand"><div class="logo"><i></i></div><b>模擬福利中心</b></div>
         <button class="photo" id="photo" aria-label="切換照片"></button>
@@ -375,6 +393,11 @@ const PHONE_SVG = `
   <rect x="46" y="28" width="48" height="84" rx="11" fill="#dbeafe" stroke="#3b82f6" stroke-width="5"/>
   <rect x="61" y="33" width="18" height="5" rx="2.5" fill="#3b82f6"/>
 </svg>`;
+const SPIN_SVG = `
+<svg viewBox="0 0 140 140" class="spin-ic">
+  <circle cx="70" cy="70" r="56" fill="none" stroke="#e5e7eb" stroke-width="12"/>
+  <path d="M70 14 A56 56 0 0 1 126 70" fill="none" stroke="#2f9e6e" stroke-width="12" stroke-linecap="round"/>
+</svg>`;
 const CHECK_SVG = `
 <svg viewBox="0 0 140 140" class="done-ic">
   <circle cx="70" cy="70" r="62" fill="#2f9e6e"/>
@@ -382,15 +405,20 @@ const CHECK_SVG = `
 </svg>`;
 
 const $ = id => document.getElementById(id);
-const punches = [];   // { type, time, via, store }
+const punches = [];   // { type, time, via, store, gpsOk }
+let flowId = 0;       // 打卡確認流程序號；關閉 sheet 時 +1，讓進行中的流程作廢
+
+// 門市 GPS 與允許範圍
+const STORE_GPS = { lat: 25.080531, lng: 121.558319 };
+let rangeM = 300;   // 可在頁面上調整，方便 demo 位置異常
 
 // ---------- 打卡紀錄 ----------
 function hhmm(d = new Date()) {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
-function punch(via, store) {
+function punch(via, store, gpsOk) {
   const type = punches.length % 2 === 0 ? '上班' : '下班';
-  const p = { type, time: hhmm(), via, store };
+  const p = { type, time: hhmm(), via, store, gpsOk };
   punches.push(p);
   renderStatus();
   if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
@@ -398,7 +426,7 @@ function punch(via, store) {
 }
 function renderStatus() {
   const txt = punches.length
-    ? '今日打卡：' + punches.map(p => `<b>${p.time}</b>（${p.via}）`).join('、')
+    ? '今日打卡：' + punches.map(p => `<b>${p.time}</b>（${p.via}${p.gpsOk ? '' : '・<span class="bad">位置異常</span>'}）`).join('、')
       + '<button class="reset" data-reset>重設</button>'
     : '';
   $('status-scan').innerHTML = txt;
@@ -428,11 +456,100 @@ function closeSheet() {
   $('mask').classList.remove('on');
   $('sheet').classList.remove('on');
   clearTimeout(nfcTimer);
+  flowId++;
 }
 $('mask').onclick = closeSheet;
 $('sheet-x').onclick = closeSheet;
 $('sheet-body').addEventListener('click', e => {
   if (e.target.closest('[data-close]')) closeSheet();
+});
+
+// ---------- 打卡前確認：Wi-Fi → GPS → 完成 ----------
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const GPS_ERR = {
+  0: '此瀏覽器不支援定位',
+  1: '未允許定位（請到手機設定開啟瀏覽器定位權限）',
+  2: '無法取得位置',
+  3: '定位逾時',
+};
+function getGps() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject({ code: 0 });
+    navigator.geolocation.getCurrentPosition(p => resolve(p.coords), reject,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  });
+}
+// 兩點距離（公尺，haversine）
+function distM(a, b) {
+  const toR = x => x * Math.PI / 180;
+  const h = Math.sin(toR(b.lat - a.lat) / 2) ** 2
+    + Math.cos(toR(a.lat)) * Math.cos(toR(b.lat)) * Math.sin(toR(b.lng - a.lng) / 2) ** 2;
+  return 2 * 6371000 * Math.asin(Math.sqrt(h));
+}
+const fmtLatLng = (lat, lng) => lat.toFixed(6) + ', ' + lng.toFixed(6);
+const fmtDist = m => m < 1000 ? Math.round(m) + ' 公尺' : (m / 1000).toFixed(1) + ' 公里';
+function setStep(id, cls, html) {
+  const el = $(id);
+  el.className = 'step ' + cls;
+  el.querySelector('.st').textContent = cls === 'ok' ? '✓' : cls === 'alert' ? '!' : '';
+  el.querySelector('.d').innerHTML = html;
+}
+async function checkAndPunch({ via, title, sub, storeId }) {
+  const id = ++flowId;
+  const storeLine = '門市 ' + fmtLatLng(STORE_GPS.lat, STORE_GPS.lng);
+  openSheet(`
+    <h2>確認打卡條件</h2>
+    <div class="sub">${sub}</div>
+    <div class="icon flow-ic" id="flow-ic">${SPIN_SVG}</div>
+    <div class="flow-msg" id="flow-msg">確認中…</div>
+    <div id="flow-warn"></div>
+    <div class="steps">
+      <div class="step run" id="st-wifi"><i class="st"></i><div><b>門市 Wi-Fi</b><div class="d">確認中…</div></div></div>
+      <div class="step" id="st-gps"><i class="st"></i><div><b>GPS 位置（範圍 ${rangeM} 公尺）</b><div class="d">等待中</div></div></div>
+    </div>
+    <button class="btn cancel" data-close>取消</button>`);
+  await sleep(500);
+  if (id !== flowId) return;
+  setStep('st-wifi', 'ok', '已連線');
+  setStep('st-gps', 'run', storeLine + '<br>定位中…');
+
+  let gpsOk = false, html;
+  try {
+    const c = await getGps();
+    if (id !== flowId) return;
+    const d = distM(STORE_GPS, { lat: c.latitude, lng: c.longitude });
+    gpsOk = d <= rangeM;
+    html = `${storeLine}<br>實際 ${fmtLatLng(c.latitude, c.longitude)}（誤差 ±${Math.round(c.accuracy)} 公尺）<br>`
+      + `距離 ${fmtDist(d)} → <span class="tag ${gpsOk ? 'in' : 'out'}">${gpsOk ? '範圍內' : '超出範圍'}</span>`;
+  } catch (e) {
+    if (id !== flowId) return;
+    html = `${storeLine}<br><span class="tag out">${GPS_ERR[e.code] || '無法取得位置'}</span>`;
+  }
+  setStep('st-gps', gpsOk ? 'ok' : 'alert', html);
+  await sleep(400);
+  if (id !== flowId) return;
+
+  const p = punch(via, storeId, gpsOk);
+  $('sheet-body').querySelector('h2').textContent = title;
+  $('flow-ic').innerHTML = CHECK_SVG;
+  $('flow-msg').className = 'flow-msg ok';
+  $('flow-msg').textContent = '打卡完成 ' + p.time;
+  if (!gpsOk) $('flow-warn').innerHTML = '<div class="warn"><i>!</i>GPS 位置異常，已標記，待店長確認</div>';
+  $('sheet-body').querySelector('[data-close]').textContent = '完成';
+}
+
+// ---------- GPS 範圍設定（demo 用） ----------
+function renderRange() {
+  document.querySelectorAll('[data-range]').forEach(b => b.title = `GPS 範圍 ${rangeM} 公尺`);
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-range]')) return;
+  const v = prompt('GPS 允許範圍（公尺）\n輸入很小的數字（例如 5）可示範「GPS 位置異常」', rangeM);
+  if (v === null) return;
+  const n = Math.round(Number(v));
+  if (!(n > 0)) return alert('請輸入大於 0 的數字');
+  rangeM = n;
+  renderRange();
 });
 
 // ---------- 感應打卡（模擬） ----------
@@ -452,13 +569,7 @@ function onNfcTap() {
   ic.classList.add('busy');
   $('sheet-body').querySelector('.sub').textContent = '讀取中…';
   nfcTimer = setTimeout(() => {
-    const p = punch('感應');
-    openSheet(`
-      <h2>感應成功</h2>
-      <div class="sub">陳*儒 · 21077123</div>
-      <div class="icon">${CHECK_SVG}</div>
-      <div class="punch">打卡完成 ${p.time}</div>
-      <button class="btn cancel" data-close>完成</button>`);
+    checkAndPunch({ via: '感應', title: '感應成功', sub: '陳*儒 · 21077123' });
   }, 800);
 }
 $('btn-nfc').onclick = openNfcSheet;
@@ -644,18 +755,10 @@ function handleCode(text) {
   stopCamera();
   showErr('');
   const store = STORES[id];
-  const p = punch('掃碼', id);
-  openSheet(`
-    <h2>掃描完成</h2>
-    <div class="sub">${store ? store.area : '門店'}</div>
-    <div class="icon">${CHECK_SVG}</div>
-    <div class="punch">打卡完成 ${p.time}</div>
-    <div class="result">
-      <div><span class="k">門店</span>${store ? store.name : '（未建檔）'}</div>
-      <div><span class="k">門店代碼</span>${id}</div>
-      <div><span class="k">掃描內容</span><span style="word-break:break-all">${text.replace(/</g, '&lt;')}</span></div>
-    </div>
-    <button class="btn cancel" data-close>完成</button>`);
+  checkAndPunch({
+    via: '掃碼', title: '掃描完成', storeId: id,
+    sub: store ? `${store.area} · ${store.name}（${id}）` : `門店 ${id}`,
+  });
   return true;
 }
 
