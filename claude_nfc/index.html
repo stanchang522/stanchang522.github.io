@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LSP 打卡</title>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --line: #e3e6ea;
+    --text: #1a1a1a;
+    --sub: #6b7280;
+    --muted: #8a8f98;
+    --green: #2f9e6e;
+    --green-bg: #e6f6ee;
+    --card-blue: #2957a4;
+    --logo-blue: #305bab;
+    --logo-red: #bd0a0a;
+    --ring: #3b82f6;
+    --dark: #1f2937;
+    --red: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #d9dce1; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .app {
+    position: relative;
+    max-width: 430px;
+    height: 100dvh;
+    margin: 0 auto;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    background: #fff;
+    border-bottom: 4px solid var(--line);
+    padding: calc(env(safe-area-inset-top) + 12px) 16px 10px;
+    text-align: center;
+  }
+  header h1 { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+  .seg {
+    margin: 8px auto 0;
+    display: inline-flex;
+    background: var(--bg);
+    border-radius: 999px;
+    padding: 4px;
+  }
+  .seg button {
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sub);
+    padding: 7px 18px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .seg button.on { background: #fff; color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
+  main { flex: 1; overflow-y: auto; padding: 12px 16px 16px; }
+  .view { display: none; }
+  .view.on { display: block; }
+
+  .badges { display: flex; gap: 8px; margin-bottom: 12px; }
+  .badge {
+    flex: 1;
+    text-align: center;
+    background: var(--green-bg);
+    color: var(--green);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 7px 4px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* ---------- scan view ---------- */
+  .who { font-size: 14px; font-weight: 700; color: var(--sub); margin: 2px 6px 8px; }
+  .shift {
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px 18px;
+    position: relative;
+    margin-bottom: 16px;
+  }
+  .shift .lbl { font-size: 13px; color: var(--muted); }
+  .shift .main { font-size: 22px; font-weight: 800; margin-top: 2px; }
+  .shift .main span { margin-left: 12px; }
+  .shift .meta { font-size: 13px; color: var(--sub); margin-top: 2px; }
+  .shift .day {
+    position: absolute; right: 14px; top: 12px;
+    background: #eef2f7; color: #4b5563;
+    font-size: 12.5px; font-weight: 700;
+    padding: 5px 12px; border-radius: 999px;
+  }
+  .scanbox {
+    position: relative;
+    width: min(270px, 78%);
+    aspect-ratio: 1;
+    margin: 0 auto;
+    background: var(--dark);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .scanbox video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .scanbox .corner { position: absolute; width: 34px; height: 34px; border: 5px solid #fff; z-index: 2; }
+  .c1 { top: 14px; left: 14px; border-right: 0 !important; border-bottom: 0 !important; }
+  .c2 { top: 14px; right: 14px; border-left: 0 !important; border-bottom: 0 !important; }
+  .c3 { bottom: 14px; left: 14px; border-right: 0 !important; border-top: 0 !important; }
+  .c4 { bottom: 14px; right: 14px; border-left: 0 !important; border-top: 0 !important; }
+  .scanbox .hint {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    color: #fff; font-size: 18px; font-weight: 800; text-align: center; padding: 0 20px;
+  }
+  .scanbox.live .hint { display: none; }
+  .scanline {
+    display: none;
+    position: absolute; left: 10%; right: 10%; height: 2px; z-index: 2;
+    background: #4ade80; box-shadow: 0 0 10px #4ade80;
+    animation: sweep 2s ease-in-out infinite;
+  }
+  .scanbox.live .scanline { display: block; }
+  @keyframes sweep { 0%,100% { top: 14%; } 50% { top: 86%; } }
+  .btn {
+    display: block; width: 100%;
+    border: 0; border-radius: 12px;
+    font: inherit; font-size: 16px; font-weight: 700;
+    padding: 13px; cursor: pointer;
+  }
+  .btn.primary { background: var(--green); color: #fff; }
+  .btn.ghost { background: #fff; color: var(--sub); }
+  .btn.small { width: auto; display: inline-block; padding: 9px 18px; font-size: 14px; }
+  .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+  .err {
+    display: none;
+    margin-top: 12px; padding: 10px 12px;
+    background: #fef2f2; color: var(--red);
+    border-radius: 10px; font-size: 13px; line-height: 1.5;
+  }
+  .err.on { display: block; }
+  .status {
+    margin-top: 14px; text-align: center; font-size: 13px; color: var(--sub);
+  }
+  .status b { color: var(--green); }
+  .status .reset {
+    border: 0; background: none; font: inherit; font-size: 12px;
+    color: var(--sub); text-decoration: underline; margin-left: 6px; cursor: pointer;
+  }
+
+  /* ---------- nfc view ---------- */
+  .idcard {
+    background: var(--card-blue);
+    border: 1px solid var(--dark);
+    border-radius: 14px;
+    color: #fff;
+    padding: 22px 20px 20px;
+  }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 16px; }
+  .logo {
+    width: 42px; height: 34px;
+    background: var(--logo-blue);
+    border: 1px solid #fff;
+    display: flex; align-items: center;
+  }
+  .logo i { display: block; width: 100%; height: 13px; background: var(--logo-red); }
+  .brand b { font-size: 21px; letter-spacing: 1px; }
+  .photo {
+    display: block;
+    width: 124px; height: 144px;
+    margin: 18px auto 0;
+    padding: 0; border: 4px solid #fff; border-radius: 14px;
+    background: #fff; overflow: hidden; cursor: pointer;
+  }
+  .photo svg { width: 100%; height: 100%; display: block; }
+  .idcard .name { text-align: center; font-size: 27px; font-weight: 800; margin-top: 14px; }
+  .idcard .eno { text-align: center; font-size: 17px; margin-top: 4px; letter-spacing: 1px; }
+  .barcode {
+    background: #fff; border-radius: 10px;
+    width: 72%; margin: 14px auto 0; padding: 7px 12px 4px;
+    color: var(--card-blue); text-align: center;
+  }
+  .barcode svg { display: block; width: 100%; height: 30px; }
+  .barcode .num { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .pick { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 18px; }
+  .pick button {
+    border: 1px solid var(--line); background: #fff; color: var(--sub);
+    font: inherit; font-size: 13px; font-weight: 700;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  }
+  .pick button.on { background: var(--card-blue); border-color: var(--card-blue); color: #fff; }
+  .idcard hr { border: 0; border-top: 1.5px solid rgba(255,255,255,.85); margin: 18px 0 14px; }
+  .idcard .row { display: flex; justify-content: space-between; align-items: center; }
+  .idcard .lbl { font-size: 12.5px; }
+  .idcard .main { font-size: 20px; font-weight: 800; margin-top: 2px; }
+  .idcard .main span { margin-left: 14px; }
+  .idcard .meta { font-size: 12px; margin-top: 2px; opacity: .95; }
+  .idcard .day {
+    border: 1.5px solid #fff; border-radius: 999px;
+    font-size: 12px; font-weight: 700; padding: 4px 11px; white-space: nowrap;
+  }
+  .reopen { text-align: center; margin-top: 16px; }
+
+  /* ---------- bottom nav ---------- */
+  nav {
+    display: flex;
+    background: #fff;
+    border-top: 1px solid var(--line);
+    padding-bottom: env(safe-area-inset-bottom);
+    position: relative;
+  }
+  nav a {
+    flex: 1; text-align: center; text-decoration: none;
+    color: var(--sub); font-size: 12px; padding: 7px 0 8px;
+  }
+  nav a .ic { display: block; font-size: 23px; line-height: 1.2; }
+  nav a.on { color: var(--green); font-weight: 700; position: relative; }
+  nav a.on::before {
+    content: ""; position: absolute; top: -1px; left: 22%; right: 22%;
+    height: 3px; background: var(--green); border-radius: 2px;
+  }
+
+  /* ---------- bottom sheet ---------- */
+  .mask {
+    position: absolute; inset: 0; z-index: 20;
+    background: rgba(0,0,0,.42);
+    opacity: 0; pointer-events: none; transition: opacity .25s;
+  }
+  .mask.on { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 21;
+    background: #fff; border-radius: 34px;
+    padding: 26px 24px calc(22px + env(safe-area-inset-bottom));
+    text-align: center;
+    transform: translateY(110%); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+  }
+  .sheet.on { transform: translateY(0); }
+  .sheet .x {
+    position: absolute; top: 18px; right: 18px;
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 0; background: #e5e7eb; color: #6b7280;
+    font-size: 17px; font-weight: 700; cursor: pointer;
+  }
+  .sheet h2 { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .sheet .sub { font-size: 14px; color: var(--sub); margin-top: 6px; min-height: 20px; }
+  .sheet .icon {
+    display: block; margin: 22px auto 26px;
+    width: 140px; height: 140px;
+    border: 0; background: none; cursor: pointer; padding: 0;
+    position: relative;
+  }
+  .sheet .icon svg { width: 100%; height: 100%; display: block; }
+  .sheet .icon.wait::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    border: 3px solid var(--ring);
+    animation: pulse 1.6s ease-out infinite;
+  }
+  @keyframes pulse { 0% { transform: scale(1); opacity: .7; } 100% { transform: scale(1.35); opacity: 0; } }
+  .sheet .icon.busy svg { animation: shake .5s ease-in-out infinite; }
+  @keyframes shake { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-6deg); } 75% { transform: rotate(6deg); } }
+  .done-ic { animation: pop .35s cubic-bezier(.3,1.6,.5,1); }
+  @keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .result {
+    background: var(--bg); border-radius: 14px;
+    padding: 12px 16px; margin: -6px 0 18px; text-align: left;
+    font-size: 14px; line-height: 1.8;
+  }
+  .result .k { color: var(--sub); display: inline-block; width: 72px; }
+  .punch { font-size: 18px; font-weight: 800; color: var(--green); margin: -8px 0 18px; }
+  .sheet .btn.cancel { background: #f2f2f7; color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1 id="title">掃碼打卡</h1>
+    <div class="seg">
+      <button data-mode="scan" class="on">掃碼打卡</button>
+      <button data-mode="nfc">感應打卡</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- 掃碼 -->
+    <section class="view on" id="v-scan">
+      <div class="who">陳*儒 · 值班組</div>
+      <div class="shift">
+        <div class="lbl">今日班別</div>
+        <div class="main">A1<span>07:30–16:30</span></div>
+        <div class="meta">(8+1) · 休息 1 小時 · 工時 8h</div>
+        <div class="day">1/5（二）D5</div>
+      </div>
+      <div class="scanbox" id="scanbox">
+        <video id="video" playsinline muted></video>
+        <div class="corner c1"></div><div class="corner c2"></div>
+        <div class="corner c3"></div><div class="corner c4"></div>
+        <div class="scanline"></div>
+        <div class="hint">對準門店 QR Code</div>
+      </div>
+      <div class="badges" style="margin-top:14px">
+        <div class="badge">✓ 已連線門店 Wi-Fi</div>
+        <div class="badge">✓ 位置在門店範圍內</div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="btn-cam">開啟相機掃描</button>
+      </div>
+      <div class="err" id="err"></div>
+      <div class="status" id="status-scan"></div>
+    </section>
+
+    <!-- 感應 -->
+    <section class="view" id="v-nfc">
+      <div class="badges">
+        <div class="badge">✓ 已連線門店 Wi-Fi</div>
+        <div class="badge">✓ 位置在門店範圍內</div>
+      </div>
+      <div class="idcard">
+        <div class="brand"><div class="logo"><i></i></div><b>模擬福利中心</b></div>
+        <button class="photo" id="photo" aria-label="切換照片"></button>
+        <div class="name">陳*儒 · 值班組</div>
+        <div class="eno">21077123</div>
+        <div class="barcode">
+          <svg id="barcode" preserveAspectRatio="none"></svg>
+          <div class="num">1999 0041 1221 1674</div>
+        </div>
+        <hr>
+        <div class="lbl">今日班別</div>
+        <div class="row">
+          <div class="main">A1<span>07:30–16:30</span></div>
+          <div class="day">1/5（二）D5</div>
+        </div>
+        <div class="meta">(8+1) · 休息 1 小時 · 工時 8h</div>
+      </div>
+      <div class="pick" id="pick"></div>
+      <div class="reopen"><button class="btn primary small" id="btn-nfc">開始感應</button></div>
+      <div class="status" id="status-nfc"></div>
+    </section>
+  </main>
+
+  <nav>
+    <a href="#"><span class="ic">🏠</span>首頁</a>
+    <a href="#"><span class="ic">📋</span>流程中心</a>
+    <a href="#" class="on"><span class="ic">⏰</span>打卡</a>
+    <a href="#"><span class="ic">🌴</span>排休假</a>
+    <a href="#"><span class="ic">📅</span>班表</a>
+  </nav>
+
+  <div class="mask" id="mask"></div>
+  <div class="sheet" id="sheet">
+    <button class="x" id="sheet-x" aria-label="關閉">✕</button>
+    <div id="sheet-body"></div>
+  </div>
+</div>
+
+<script>
+// 門店對照（storeid → 名稱），找不到就只顯示代碼
+const STORES = {
+  '2254105': { area: '北一處 內湖區', name: '內湖 瑞光' },
+  '2254100': { area: '北一處 內湖區', name: '內湖 瑞光' },
+};
+
+const PHONE_SVG = `
+<svg viewBox="0 0 140 140">
+  <circle cx="70" cy="70" r="62" fill="#fff" stroke="#3b82f6" stroke-width="9"/>
+  <rect x="46" y="28" width="48" height="84" rx="11" fill="#dbeafe" stroke="#3b82f6" stroke-width="5"/>
+  <rect x="61" y="33" width="18" height="5" rx="2.5" fill="#3b82f6"/>
+</svg>`;
+const CHECK_SVG = `
+<svg viewBox="0 0 140 140" class="done-ic">
+  <circle cx="70" cy="70" r="62" fill="#2f9e6e"/>
+  <path d="M42 72 L62 92 L100 52" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+
+const $ = id => document.getElementById(id);
+const punches = [];   // { type, time, via, store }
+
+// ---------- 打卡紀錄 ----------
+function hhmm(d = new Date()) {
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+function punch(via, store) {
+  const type = punches.length % 2 === 0 ? '上班' : '下班';
+  const p = { type, time: hhmm(), via, store };
+  punches.push(p);
+  renderStatus();
+  if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
+  return p;
+}
+function renderStatus() {
+  const txt = punches.length
+    ? '今日打卡：' + punches.map(p => `<b>${p.time}</b>（${p.via}）`).join('、')
+      + '<button class="reset" data-reset>重設</button>'
+    : '';
+  $('status-scan').innerHTML = txt;
+  $('status-nfc').innerHTML = txt;
+}
+
+// ---------- 分頁切換 ----------
+let mode = 'scan';
+document.querySelectorAll('.seg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+  $('v-scan').classList.toggle('on', m === 'scan');
+  $('v-nfc').classList.toggle('on', m === 'nfc');
+  $('title').textContent = m === 'scan' ? '掃碼打卡' : '感應打卡';
+  closeSheet();
+  if (m === 'nfc') stopCamera();
+}
+
+// ---------- bottom sheet ----------
+function openSheet(html) {
+  $('sheet-body').innerHTML = html;
+  $('mask').classList.add('on');
+  $('sheet').classList.add('on');
+}
+function closeSheet() {
+  $('mask').classList.remove('on');
+  $('sheet').classList.remove('on');
+  clearTimeout(nfcTimer);
+}
+$('mask').onclick = closeSheet;
+$('sheet-x').onclick = closeSheet;
+$('sheet-body').addEventListener('click', e => {
+  if (e.target.closest('[data-close]')) closeSheet();
+});
+
+// ---------- 感應打卡（模擬） ----------
+let nfcTimer;
+function openNfcSheet() {
+  openSheet(`
+    <h2>可進行掃描</h2>
+    <div class="sub">點擊手機圖示，模擬靠近感應器</div>
+    <button class="icon wait" id="nfc-icon" aria-label="感應">${PHONE_SVG}</button>
+    <button class="btn cancel" data-close>取消</button>`);
+  $('nfc-icon').onclick = onNfcTap;
+}
+function onNfcTap() {
+  const ic = $('nfc-icon');
+  if (ic.classList.contains('busy')) return;
+  ic.classList.remove('wait');
+  ic.classList.add('busy');
+  $('sheet-body').querySelector('.sub').textContent = '讀取中…';
+  nfcTimer = setTimeout(() => {
+    const p = punch('感應');
+    openSheet(`
+      <h2>感應成功</h2>
+      <div class="sub">陳*儒 · 21077123</div>
+      <div class="icon">${CHECK_SVG}</div>
+      <div class="punch">打卡完成 ${p.time}</div>
+      <button class="btn cancel" data-close>完成</button>`);
+  }, 800);
+}
+$('btn-nfc').onclick = openNfcSheet;
+document.addEventListener('click', e => {
+  if (!e.target.closest('[data-reset]')) return;
+  punches.length = 0;
+  renderStatus();
+});
+
+// ---------- 員工照片（卡通） ----------
+const SKIN = '#f6d2b0', INK = '#3b2a20';
+const FACE = (cx, cy) => `
+  <circle cx="${cx - 12}" cy="${cy + 2}" r="3.6" fill="${INK}"/>
+  <circle cx="${cx + 12}" cy="${cy + 2}" r="3.6" fill="${INK}"/>
+  <circle cx="${cx - 19}" cy="${cy + 13}" r="5" fill="#f4a3a3" opacity=".6"/>
+  <circle cx="${cx + 19}" cy="${cy + 13}" r="5" fill="#f4a3a3" opacity=".6"/>
+  <path d="M${cx - 8} ${cy + 14} Q${cx} ${cy + 21} ${cx + 8} ${cy + 14}" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
+const AVATARS = {
+  boy: { label: '男生', svg: `
+    <rect width="148" height="172" fill="#cfe3ff"/>
+    <path d="M22 172 Q22 128 74 124 Q126 128 126 172Z" fill="#3b82f6"/>
+    <rect x="64" y="108" width="20" height="20" fill="${SKIN}"/>
+    <circle cx="74" cy="80" r="36" fill="${SKIN}"/>
+    <path d="M38 78 Q36 40 74 40 Q112 40 110 78 Q104 58 86 56 Q70 64 50 60 Q42 66 38 78Z" fill="${INK}"/>
+    ${FACE(74, 82)}` },
+  girl: { label: '女生', svg: `
+    <rect width="148" height="172" fill="#ffdbe6"/>
+    <path d="M32 82 Q30 40 74 38 Q118 40 116 82 L120 140 Q74 150 28 140Z" fill="#5a3825"/>
+    <path d="M22 172 Q22 130 74 126 Q126 130 126 172Z" fill="#ec6f9a"/>
+    <rect x="64" y="108" width="20" height="20" fill="${SKIN}"/>
+    <circle cx="74" cy="82" r="34" fill="${SKIN}"/>
+    <path d="M40 76 Q42 46 74 46 Q106 46 108 76 Q96 62 80 60 Q62 66 40 76Z" fill="#5a3825"/>
+    <circle cx="104" cy="58" r="7" fill="#ff8fb1"/>
+    ${FACE(74, 84)}` },
+  dog: { label: '小狗', svg: `
+    <rect width="148" height="172" fill="#fff1cc"/>
+    <ellipse cx="36" cy="82" rx="15" ry="32" fill="#8a5a2b" transform="rotate(18 36 82)"/>
+    <ellipse cx="112" cy="82" rx="15" ry="32" fill="#8a5a2b" transform="rotate(-18 112 82)"/>
+    <circle cx="74" cy="86" r="40" fill="#c98a4b"/>
+    <ellipse cx="74" cy="108" rx="24" ry="18" fill="#f3dcc0"/>
+    <circle cx="60" cy="80" r="4.5" fill="${INK}"/>
+    <circle cx="88" cy="80" r="4.5" fill="${INK}"/>
+    <ellipse cx="74" cy="98" rx="8" ry="6" fill="${INK}"/>
+    <path d="M74 104 L74 110 M66 110 Q74 116 82 110" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>
+    <path d="M70 113 Q74 126 78 113Z" fill="#ef6b6b"/>` },
+  cat: { label: '小貓', svg: `
+    <rect width="148" height="172" fill="#e3f4e6"/>
+    <path d="M38 76 L42 34 L70 56Z M110 76 L106 34 L78 56Z" fill="#f2a65a"/>
+    <path d="M46 64 L48 46 L62 56Z M102 64 L100 46 L86 56Z" fill="#ffd0c2"/>
+    <ellipse cx="74" cy="92" rx="42" ry="38" fill="#f2a65a"/>
+    <path d="M60 60 L64 72 M74 58 L74 72 M88 60 L84 72" stroke="#d9823a" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="58" cy="88" rx="5" ry="6.5" fill="${INK}"/>
+    <ellipse cx="90" cy="88" rx="5" ry="6.5" fill="${INK}"/>
+    <path d="M69 100 L79 100 L74 106Z" fill="#ef7f8f"/>
+    <path d="M74 106 Q68 114 62 110 M74 106 Q80 114 86 110" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M44 102 L22 98 M44 108 L22 112 M104 102 L126 98 M104 108 L126 112" stroke="${INK}" stroke-width="2" stroke-linecap="round"/>` },
+  mountain: { label: '山', svg: `
+    <rect width="148" height="172" fill="#bfe3ff"/>
+    <circle cx="112" cy="40" r="16" fill="#ffd34d"/>
+    <path d="M-10 150 L52 58 L114 150Z" fill="#6b8f71"/>
+    <path d="M40 150 L100 76 L160 150Z" fill="#4f7a5a"/>
+    <path d="M52 58 L40 76 L48 72 L56 80 L64 74Z" fill="#fff"/>
+    <path d="M100 76 L90 89 L98 86 L105 92 L110 88Z" fill="#fff"/>
+    <rect y="140" width="148" height="32" fill="#8cc06b"/>` },
+  sea: { label: '海', svg: `
+    <rect width="148" height="172" fill="#bfe9ff"/>
+    <circle cx="40" cy="44" r="16" fill="#ffd34d"/>
+    <path d="M96 40 q8 -8 16 0 q8 -8 16 0" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+    <rect y="84" width="148" height="88" fill="#2b7fd1"/>
+    <path d="M0 100 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#9fd3ff" stroke-width="4"/>
+    <path d="M0 120 q12 -8 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 t24 0" fill="none" stroke="#7cc2fb" stroke-width="4"/>
+    <path d="M0 150 Q74 132 148 150 L148 172 L0 172Z" fill="#f3d9a4"/>` },
+};
+const AV_KEYS = Object.keys(AVATARS);
+let avatar = 'girl';
+
+$('pick').innerHTML = AV_KEYS.map(k => `<button data-av="${k}">${AVATARS[k].label}</button>`).join('');
+$('pick').onclick = e => { const b = e.target.closest('[data-av]'); if (b) setAvatar(b.dataset.av); };
+$('photo').onclick = () => setAvatar(AV_KEYS[(AV_KEYS.indexOf(avatar) + 1) % AV_KEYS.length]);
+function setAvatar(k) {
+  avatar = k;
+  $('photo').innerHTML = `<svg viewBox="0 0 148 172">${AVATARS[k].svg}</svg>`;
+  $('pick').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.av === k));
+}
+setAvatar(avatar);
+
+// ---------- 條碼（Code 128-C，純數字） ----------
+const C128 = '212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232'.split(' ');
+function drawBarcode(svg, digits) {
+  const codes = [105];
+  for (let i = 0; i < digits.length; i += 2) codes.push(+digits.substr(i, 2));
+  codes.push(codes.reduce((s, v, i) => s + v * (i || 1), 0) % 103);
+  const pattern = codes.map(c => C128[c]).join('') + '2331112';
+  const quiet = 10;
+  let x = quiet, rects = '';
+  [...pattern].forEach((w, i) => {
+    if (i % 2 === 0) rects += `<rect x="${x}" y="0" width="${w}" height="1"/>`;
+    x += +w;
+  });
+  svg.setAttribute('viewBox', `0 0 ${x + quiet} 1`);
+  svg.setAttribute('fill', 'currentColor');
+  svg.innerHTML = rects;
+}
+drawBarcode($('barcode'), '1999004112211674');
+
+// ---------- 掃碼打卡 ----------
+let stream = null, rafId = 0, lastBadAt = 0;
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+function showErr(msg) { $('err').innerHTML = msg; $('err').classList.toggle('on', !!msg); }
+
+function parseStoreId(text) {
+  const m = text.match(/storeid=(\d+)/i);
+  if (m) return m[1];
+  if (/^\d{5,}$/.test(text.trim())) return text.trim();
+  return null;
+}
+
+async function startCamera() {
+  showErr('');
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+    showErr('此網址無法開啟相機（需 HTTPS 或 localhost）。');
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } }, audio: false,
+    });
+  } catch (e) {
+    showErr(e.name === 'NotAllowedError'
+      ? '相機權限被拒絕，請到瀏覽器設定允許相機後再試。'
+      : '無法開啟相機：' + e.message);
+    return;
+  }
+  const v = $('video');
+  v.srcObject = stream;
+  await v.play();
+  $('scanbox').classList.add('live');
+  $('btn-cam').textContent = '關閉相機';
+  tick();
+}
+
+function stopCamera() {
+  cancelAnimationFrame(rafId);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  $('video').srcObject = null;
+  $('scanbox').classList.remove('live');
+  $('btn-cam').textContent = '開啟相機掃描';
+}
+
+function tick() {
+  const v = $('video');
+  if (!stream) return;
+  if (v.readyState >= 2 && v.videoWidth) {
+    // 縮到最長邊 640 再解碼，手機上比較順
+    const s = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+    canvas.width = v.videoWidth * s;
+    canvas.height = v.videoHeight * s;
+    ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+    const code = decode(ctx.getImageData(0, 0, canvas.width, canvas.height));
+    if (code && handleCode(code)) return;
+  }
+  rafId = requestAnimationFrame(tick);
+}
+
+function decode(img) {
+  const r = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+  return r ? r.data : null;
+}
+
+// 回傳 true 代表已完成（停止掃描）
+function handleCode(text) {
+  const id = parseStoreId(text);
+  if (!id) {
+    if (Date.now() - lastBadAt > 2000) {
+      lastBadAt = Date.now();
+      showErr('這不是門店 QR Code：' + text.replace(/</g, '&lt;'));
+    }
+    return false;
+  }
+  stopCamera();
+  showErr('');
+  const store = STORES[id];
+  const p = punch('掃碼', id);
+  openSheet(`
+    <h2>掃描完成</h2>
+    <div class="sub">${store ? store.area : '門店'}</div>
+    <div class="icon">${CHECK_SVG}</div>
+    <div class="punch">打卡完成 ${p.time}</div>
+    <div class="result">
+      <div><span class="k">門店</span>${store ? store.name : '（未建檔）'}</div>
+      <div><span class="k">門店代碼</span>${id}</div>
+      <div><span class="k">掃描內容</span><span style="word-break:break-all">${text.replace(/</g, '&lt;')}</span></div>
+    </div>
+    <button class="btn cancel" data-close>完成</button>`);
+  return true;
+}
+
+$('btn-cam').onclick = () => stream ? stopCamera() : startCamera();
+setMode('nfc');   // 預設進感應打卡
+</script>
+</body>
+</html>
