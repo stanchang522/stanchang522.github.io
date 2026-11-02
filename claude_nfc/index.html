@@ -303,30 +303,20 @@
   }
   .status .bad { color: #e5484d; }
 
-  /* ---------- 今日一起上班 ---------- */
-  .team {
-    display: flex; align-items: center; gap: 10px; width: 100%;
-    margin-top: 10px; padding: 10px 14px;
-    background: #fff; border: 0; border-radius: 14px;
-    font: inherit; color: var(--text); cursor: pointer;
-    box-shadow: 0 1px 2px rgba(0,0,0,.05);
-  }
-  .team .t { font-size: 14px; font-weight: 700; white-space: nowrap; }
-  .team .t b { color: var(--green); }
-  .team .avs { flex: 1; display: flex; justify-content: flex-end; padding-left: 6px; }
-  .team .avs i {
-    width: 26px; height: 26px; margin-left: -6px; border-radius: 50%; border: 2px solid #fff;
-    background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; font-style: normal;
-    display: grid; place-items: center;
-  }
-  .team .avs i.me { background: var(--green-bg); color: var(--green); }
-  .team .more { font-size: 13px; color: var(--sub); white-space: nowrap; }
-  .team-list { text-align: left; max-height: 55vh; overflow-y: auto; margin: 10px 0 16px; }
-  .team-list .g { font-size: 13px; font-weight: 700; color: var(--sub); margin: 12px 2px 6px; }
+  /* ---------- 今日一起上班（依組別，直接列在頁面上） ---------- */
+  .team-sec { margin-top: 18px; }
+  .team-sec .hd { display: flex; align-items: baseline; justify-content: space-between; margin: 0 4px 2px; }
+  .team-sec .hd b { font-size: 16px; font-weight: 800; }
+  .team-sec .hd span { font-size: 13px; color: var(--sub); }
+  .team-sec .g { font-size: 13px; font-weight: 700; color: #4b5563; margin: 10px 4px 6px; }
   .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .chip { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 8px 10px; font-size: 14px; font-weight: 600; }
-  .chip span { display: block; margin-top: 2px; font-size: 12px; font-weight: 400; color: var(--sub); }
-  .chip.me { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .chip {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+    padding: 8px 6px; font-size: 13px; text-align: center; white-space: nowrap;
+  }
+  .chip .tm { color: var(--sub); margin-left: 6px; }
+  .chip.me { background: var(--green-bg); border-color: var(--green); color: var(--green); font-weight: 700; }
+  .chip.me .tm { color: var(--green); }
   :root { --alert: #e5484d; }   /* 警示色：與打卡紀錄的「位置異常」同為紅色 */
 </style>
 </head>
@@ -361,7 +351,7 @@
       <div class="actions">
         <button class="btn primary" id="btn-cam">開啟相機掃描</button>
       </div>
-      <button class="team" data-team><span class="t">今日一起上班 <b>8</b> 人</span><span class="avs" data-avs></span><span class="more">查看 ›</span></button>
+      <div class="team-sec" data-team-list></div>
       <div class="err" id="err"></div>
       <div class="status" id="status-scan"></div>
     </section>
@@ -387,7 +377,7 @@
       </div>
       <div class="pick" id="pick"></div>
       <div class="reopen"><button class="btn primary small" id="btn-nfc">開始感應</button></div>
-      <button class="team" data-team><span class="t">今日一起上班 <b>8</b> 人</span><span class="avs" data-avs></span><span class="more">查看 ›</span></button>
+      <div class="team-sec" data-team-list></div>
       <div class="status" id="status-nfc"></div>
     </section>
   </main>
@@ -572,28 +562,17 @@ const TEAM = [
   { group: '乾貨', people: [['李*蘭', '07:30–16:30'], ['陳*萍', '11:00–16:00'], ['吳*婷', '11:00–16:00'], ['蘇*平', '14:30–23:00']] },
 ];
 const teamCount = TEAM.reduce((n, g) => n + g.people.length, 0);
-function renderTeamBar() {
-  const all = TEAM.flatMap(g => g.people);
-  const html = all.slice(0, 6).map(([n, , me]) => `<i class="${me ? 'me' : ''}">${n[0]}</i>`).join('')
-    + (all.length > 6 ? `<i>+${all.length - 6}</i>` : '');
-  document.querySelectorAll('[data-avs]').forEach(el => el.innerHTML = html);
-  document.querySelectorAll('[data-team] .t b').forEach(el => el.textContent = teamCount);
+function renderTeam() {
+  const html = `
+    <div class="hd"><b>今日一起上班（${teamCount} 人）</b><span>依組別</span></div>
+    ${TEAM.map(g => `
+      <div class="g">${g.group} · ${g.people.length} 人</div>
+      <div class="chips">
+        ${g.people.map(([n, t, me]) => `<div class="chip${me ? ' me' : ''}">${n}${me ? '（我）' : ''}<span class="tm">${t}</span></div>`).join('')}
+      </div>`).join('')}`;
+  document.querySelectorAll('[data-team-list]').forEach(el => el.innerHTML = html);
 }
-function openTeamSheet() {
-  openSheet(`
-    <h2>今日一起上班（${teamCount} 人）</h2>
-    <div class="sub">1/5（二）· 依組別</div>
-    <div class="team-list">
-      ${TEAM.map(g => `
-        <div class="g">${g.group} · ${g.people.length} 人</div>
-        <div class="chips">
-          ${g.people.map(([n, t, me]) => `<div class="chip${me ? ' me' : ''}">${n}${me ? '（我）' : ''}<span>${t}</span></div>`).join('')}
-        </div>`).join('')}
-    </div>
-    <button class="btn cancel" data-close>關閉</button>`);
-}
-document.addEventListener('click', e => { if (e.target.closest('[data-team]')) openTeamSheet(); });
-renderTeamBar();
+renderTeam();
 
 // ---------- GPS 範圍設定（demo 用） ----------
 function renderRange() {
