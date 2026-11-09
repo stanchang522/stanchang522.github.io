@@ -248,6 +248,16 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .timenote{font-size:12px;color:#9a6a2f;margin:-6px 0 12px}
 .note{font-size:12px;color:#9a6a2f;background:#fff8ef;border-radius:8px;padding:6px 9px;margin-top:6px}
 
+#list{zoom:var(--fz,1)}
+.fzbox{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.fzbox button{font:inherit;font-size:18px;font-weight:700;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--navy);cursor:pointer}
+.fzbox button:disabled{opacity:.35;cursor:default}
+.fzbox .fzreset{width:auto;font-size:13px;padding:0 12px}
+.fzlv{min-width:72px;text-align:center;font-weight:700;color:var(--navy)}
+.fzprev{margin-top:10px;border:1px dashed #cbd5e1;border-radius:12px;padding:10px 12px;background:#fbfaf7}
+.fzprev .k{font-size:11px;font-weight:700;color:var(--spot);letter-spacing:.06em}
+.fzprev b{display:block;font-size:16px;line-height:1.35}
+.fzprev p{margin:3px 0 0;font-size:13px;color:#374151}
 .cheat section{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
 .cheat h3{margin:0 0 6px;font-size:15px;color:var(--navy)}
 .cheat ul{margin:0;padding-left:18px;font-size:13.5px}
@@ -293,12 +303,12 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- 景點圖片清單：images/images.js（換圖說明見 README） -->
-<script src="images/images.js?v=20261109d"></script>
+<script src="images/images.js?v=20261109e"></script>
 <!-- 各地點歷年 10、11 月平均：data/climate.js（由 tools/build_climate.py 產生） -->
-<script src="data/climate.js?v=20261109d"></script>
+<script src="data/climate.js?v=20261109e"></script>
 <!-- 8-bit 像素場景：pixel/scenes.js（原創，以程式繪製） -->
 <!-- 發佈時更新 ?v= 版本號，避免手機瀏覽器用到快取的舊檔 -->
-<script src="pixel/scenes.js?v=20261109d"></script>
+<script src="pixel/scenes.js?v=20261109e"></script>
 <script>
 /* ============ 行程資料 ============ */
 const TYPE = {
@@ -833,6 +843,29 @@ try{
   const v = JSON.parse(localStorage.getItem('mel_start') || 'null');
   if(v && v.def === DEFAULT_START && v.d) tripStart = v.d; else localStorage.removeItem('mel_start');
 }catch(e){ try{ localStorage.removeItem('mel_start'); }catch(_){} }
+// 字體大小：只放大左側行程內容（#list），地圖不受影響；存在這台裝置
+const FZ_LEVELS = [1, 1.15, 1.3, 1.45, 1.6];
+let fzLv = 0;
+try{ const f = +localStorage.getItem('mel_font'); if(f > 0 && f < FZ_LEVELS.length) fzLv = f; }catch(e){}
+function applyFont(){ document.documentElement.style.setProperty('--fz', FZ_LEVELS[fzLv]); }
+applyFont();
+function fontHTML(){
+  return `<section id="fzsec"><h3>🔠 字體大小</h3>
+    <div class="fzbox"><button type="button" id="fzMinus" aria-label="縮小" ${fzLv===0?'disabled':''}>－</button>
+      <span class="fzlv">${fzLv===0?'標準':'放大 '+fzLv+' 級'}<br><small style="font-weight:500;color:var(--muted)">${Math.round(FZ_LEVELS[fzLv]*100)}%</small></span>
+      <button type="button" id="fzPlus" aria-label="放大" ${fzLv===FZ_LEVELS.length-1?'disabled':''}>＋</button>
+      <button type="button" class="fzreset" id="fzReset">↺ 恢復標準</button></div>
+    <div class="fzprev"><div class="k">預覽 · 景點</div><b>維多利亞女王市場</b><p>Deli Hall 熟食館：起司、火腿、橄欖琳瑯滿目，週一、三公休。</p></div>
+    <small style="display:block;margin-top:6px;color:var(--muted);font-size:11px">按＋一次放大一級，每一天的行程卡片都會跟著變大；設定只存在這台裝置</small></section>`;
+}
+function bindFont(){
+  const set = lv => { fzLv = Math.max(0, Math.min(FZ_LEVELS.length-1, lv)); applyFont();
+    try{ fzLv ? localStorage.setItem('mel_font', fzLv) : localStorage.removeItem('mel_font'); }catch(e){}
+    const sec = $('#fzsec'); sec.outerHTML = fontHTML(); bindFont(); };
+  $('#fzPlus').onclick = () => set(fzLv+1);
+  $('#fzMinus').onclick = () => set(fzLv-1);
+  $('#fzReset').onclick = () => set(0);
+}
 function syncMonthToStart(){ if(!tripStart) return; const mm = +tripStart.slice(5,7)-1; if(TRIP_MONTHS.includes(mm)) month = mm; }
 syncMonthToStart();
 const pad2 = n => String(n).padStart(2,'0');
@@ -1420,6 +1453,7 @@ $('#list').addEventListener('click',e=>{
 function renderCheat(){
   $('#list').innerHTML = `<div class="dayhead"><h2>旅遊小抄</h2><div class="route">出發前看一次，旅途中隨時查</div></div>
   <div class="cheat">
+    ${fontHTML()}
     ${tripWeatherHTML()}
     ${flightEditHTML()}
     <section><h3>💱 匯率換算</h3>
@@ -1470,7 +1504,7 @@ function renderCheat(){
       <li>Can I get a tax invoice? — 可以開退稅發票嗎？</li>
       <li>No worries! — 沒問題／不客氣</li></ul></section>
   </div>`;
-  bindWx(); bindFlights();
+  bindWx(); bindFlights(); bindFont();
   const calc = ()=>{ $('#twd').textContent = Math.round(($('#aud').value||0)*($('#rate').value||0)).toLocaleString(); };
   $('#aud').oninput = calc; calc();
   $('#rate').oninput = e => { const v = +e.target.value; if(v>0){ rate = v; try{localStorage.setItem('mel_rate',v)}catch(_){}; renderShopRows(); } calc(); };
