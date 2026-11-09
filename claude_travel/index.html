@@ -10,7 +10,7 @@
   --bg:#f6f3ee; --surface:#ffffff; --ink:#1f2a37; --muted:#6b7280; --line:#e7e1d7;
   --navy:#16324f; --ochre:#c8742c;
   --spot:#0f766e; --meal:#d97706; --hotel:#7c3aed; --transport:#475569; --shop:#db2777; --near:#64748b;
-  --tabs-h:56px;
+  --tabs-h:64px;
   --font:-apple-system,BlinkMacSystemFont,"PingFang TC","Heiti TC","Noto Sans CJK TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
 }
 *{box-sizing:border-box}
@@ -18,7 +18,7 @@ html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font)
 header.top{background:var(--navy);color:#fff;padding:18px 20px 12px}
 header.top h1{font-weight:700;font-size:22px;margin:0;letter-spacing:.05em}
 header.top p{margin:2px 0 0;font-size:13px;opacity:.75}
-nav.tabs{position:sticky;top:0;z-index:1000;background:var(--navy);display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto;scrollbar-width:none;height:var(--tabs-h);align-items:flex-end}
+nav.tabs{position:sticky;top:0;z-index:1000;background:var(--navy);display:flex;gap:6px;padding:0 12px;overflow-x:auto;scrollbar-width:none;height:var(--tabs-h);align-items:center}
 nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs button{flex:0 0 auto;border:0;cursor:pointer;font:inherit;font-size:14px;font-weight:500;padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.1);color:#dbe4ee;transition:.15s}
 nav.tabs button:hover{background:rgba(255,255,255,.2)}
@@ -142,6 +142,14 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .dow{display:inline-block;margin-left:8px;font-size:13px;font-weight:700;color:#fff;background:var(--ochre);border-radius:999px;padding:1px 10px;vertical-align:3px}
 .closedcard{background:#fff1f0 !important;color:#b42318 !important;font-weight:700;font-size:13px;border:1px solid #f5c2bd}
 .cardx .pxwrap{margin-top:6px}
+.flt{border-top:1px dashed var(--line);padding:8px 0}
+.flt:first-of-type{border-top:0}
+.fltt{font-weight:700;font-size:13px;color:var(--navy);margin-bottom:4px}
+.fltrow{display:flex;gap:8px;margin-bottom:6px}
+.fltrow label{flex:1;display:flex;flex-direction:column;font-size:11.5px;color:var(--muted);gap:2px}
+.fltrow input{width:100%;font:inherit;font-size:13.5px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
+.fltcalc{font-size:12.5px;color:#334155}
+.flight a{color:#1a73e8}
 .exnote{font-size:11.5px;color:var(--muted);margin-top:4px !important}
 .cardx.notecard{background:#fff8ef;color:#9a6a2f;font-size:12.5px}
 .col .prod{margin:0;box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -295,14 +303,14 @@ const DAYS = [
   items:[
     {type:'transport',name:'桃園國際機場',gq:'Taoyuan International Airport Terminal 2',en:'Taoyuan International Airport (TPE)・第二航廈',ll:TPE,img:'tpe-airport',time:'20:30–21:00 報到',
      short:'抵達第二航廈，辦理華航登機報到與行李託運。',
-     flight:{no:'中華航空 CI057',from:'TPE 桃園 23:30',to:'MEL 墨爾本 11:50 (+1)',dur:'約 9 小時 20 分'},
+     flight:'out',
      intro:'在桃園機場集合，辦理登機與托運行李。墨爾本與台灣的時差是 +2 小時（10 月初～4 月初澳洲實施夏令時間時為 +3 小時），在機上好好睡一覺，隔天抵達就能直接開始市區觀光。',
      see:['出發前確認 ETA 電子簽證已核准（用「AustralianETA」App 申請）'],
      buy:['桃園機場免稅店：台灣伴手禮（鳳梨酥、茶葉）可當送給澳洲朋友的禮物'],
      tips:['行動電源、鋰電池只能放隨身行李','隨身液體每瓶 ≤100ml，總量 1 公升透明袋','澳洲入境對食物檢疫非常嚴格，肉乾、蛋製品、新鮮蔬果別帶','準備八字型 (Type I) 轉接頭'],
      near:[]},
     {type:'meal',name:'晚餐：機上餐',px:'plane-meal',ll:null,short:'航空公司機上供餐。'},
-    {type:'transport',name:'飛往墨爾本',px:'arrival',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',time:'23:30 起飛',short:'夜宿機上，隔天中午 11:50 抵達墨爾本。',
+    {type:'transport',name:'飛往墨爾本',px:'arrival',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',get time(){ return `${FL.out.dep} 起飛`; }, get short(){ return `夜宿機上，${flightCalc('out').plusDay ? '隔天' : '當天'} ${FL.out.arr} 抵達墨爾本。`; },
      intro:'飛行途中會跨過赤道，抵達時南半球的季節與台灣相反。下機前會發入境卡（Incoming Passenger Card），有攜帶食品、藥品、木製品都要老實勾選申報。',
      see:[],buy:[],tips:['入境卡食物申報不確定就勾「Yes」，申報了被沒收不會罰款，沒申報被查到可能罰款'],near:[]}
   ]
@@ -312,8 +320,8 @@ const DAYS = [
   route:'墨爾本機場 → 午餐 → 聖派翠克大教堂 → 維多利亞女王市場 → 費茲洛花園 → 飯店', wx:{loc:'mel',notes:['今天以市區步行為主，穿好走的鞋']},
   timeNote:'今日時間依手冊的抵達時間推估，景點順序依原行程表。',
   items:[
-    {type:'transport',name:'墨爾本國際機場',gq:'Melbourne Airport',en:'Melbourne Airport (Tullamarine)',ll:MEL,img:'mel-airport',time:'11:50 抵達',
-     short:'CI057 中午抵達，出關、領行李約 1 小時（11:50–13:00）。',
+    {type:'transport',name:'墨爾本國際機場',gq:'Melbourne Airport',en:'Melbourne Airport (Tullamarine)',ll:MEL,img:'mel-airport',get time(){ return `${FL.out.arr} 抵達`; },
+     get short(){ return `${FL.out.no} 抵達後，出關、領行李約 1 小時。`; },
      intro:'墨爾本機場位於市區西北約 23 公里。入境時行李可能需要過檢疫 X 光，排隊時間視航班而定。',
      see:[],buy:['機場出口有電信櫃台可買 SIM 卡（Telstra 訊號覆蓋最廣，郊區景點也比較穩）'],
      tips:['出關後把手錶調成當地時間','可先在機場 ATM 或換匯處準備少量澳幣現金'],near:[]},
@@ -574,12 +582,13 @@ const DAYS = [
     {type:'meal',name:'午餐：疏芬山二道式餐',gq:'Sovereign Hill Ballarat',time:'園區內',ll:null,short:'在疏芬山園區內用餐。'},
     {type:'meal',name:'晚餐：煌府中式料理（7 菜 1 湯）',time:'16:45–18:00',drive:'返回墨爾本約 1 小時 20 分',ll:null,short:'查無公開店家資訊，未標示於地圖。'},
     {type:'transport',name:'墨爾本國際機場',gq:'Melbourne Airport',en:'Melbourne Airport — 辦理退稅與登機',ll:MEL,img:'mel-airport',time:'18:30 抵達機場',
-     short:'辦理登機與 TRS 退稅，21:50 起飛返台。',
-     flight:{no:'中華航空 CI058',from:'MEL 墨爾本 21:50',to:'TPE 桃園 05:40 (+1)',dur:'約 9 小時 50 分'},
+     get short(){ return `辦理登機與 TRS 退稅，${FL.back.dep} 起飛返台。`; },
+     flight:'back',
      intro:'出境前記得辦理旅客退稅 (TRS)。墨爾本機場的免稅店規模大，可以最後補貨。',
      see:[],
      buy:['免稅店：澳洲紅酒（Penfolds）、保養品、Tim Tam 大包裝','最後的澳幣零錢可以在機場花掉'],
-     tips:['18:30 抵達、21:50 起飛，有 3 小時以上辦理退稅與登機','退稅 TRS：同一商家（同 ABN）60 天內含稅滿 300 澳幣，可退約 9%（GST 的 1/11）；出境前在機場 TRS 櫃台辦理，出示商品、發票和 TRS App 的 QR Code','要退稅的商品需隨身攜帶以便查驗','液體類伴手禮（紅酒、蜂蜜、乳液）記得放托運行李'],
+     get tips(){ const h = (toMin(FL.back.dep) - toMin('18:30') + 1440) % 1440 / 60; return [`18:30 抵達、${FL.back.dep} 起飛，有約 ${Math.round(h * 10) / 10} 小時辦理退稅與登機`, ...this._tips]; },
+     _tips:['退稅 TRS：同一商家（同 ABN）60 天內含稅滿 300 澳幣，可退約 9%（GST 的 1/11）；出境前在機場 TRS 櫃台辦理，出示商品、發票和 TRS App 的 QR Code','要退稅的商品需隨身攜帶以便查驗','液體類伴手禮（紅酒、蜂蜜、乳液）記得放托運行李'],
      near:[]}
   ]
 },
@@ -587,9 +596,9 @@ const DAYS = [
   title:'Day 7　抵達桃園', tab:'D7', sub:'回家',
   route:'墨爾本 ✈ 桃園國際機場', wx:null, flight:[MEL,TPE],
   items:[
-    {type:'transport',name:'墨爾本起飛',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',time:'前一晚 21:50 起飛',short:'中華航空 CI058，飛行約 9 小時 50 分。'},
+    {type:'transport',name:'墨爾本起飛',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',get time(){ return `前一晚 ${FL.back.dep} 起飛`; }, get short(){ const c = flightCalc('back'); return `${FL.back.airline} ${FL.back.no}，飛行約 ${c.h} 小時 ${c.m} 分。`; }},
     {type:'meal',name:'早餐：機上餐',ll:null,short:''},
-    {type:'transport',name:'抵達桃園國際機場',gq:'Taoyuan International Airport Terminal 2',en:'Taoyuan International Airport (TPE)・第二航廈',ll:TPE,img:'tpe-airport',time:'05:40 抵達',
+    {type:'transport',name:'抵達桃園國際機場',gq:'Taoyuan International Airport Terminal 2',en:'Taoyuan International Airport (TPE)・第二航廈',ll:TPE,img:'tpe-airport',get time(){ return `${FL.back.arr} 抵達`; },
      short:'降落第二航廈，回到溫暖的家 🏠',
      intro:'旅程結束！回台入境時，酒類每人免稅 1 公升、香菸 200 支，超過需走紅線申報。',
      see:[],buy:[],tips:['肉類製品（含肉乾、肉鬆）不可攜帶入境台灣','整理照片趁記憶猶新，寫下旅遊回憶'],near:[]}
@@ -739,9 +748,74 @@ function pxLoop(ts){
   if(pxVisible.size) requestAnimationFrame(pxLoop); else pxRunning = false;   // 沒有看得到的動畫就停止
 }
 
-function flightHTML(f){
-  return `<div class="flight"><b>✈ ${esc(f.no)}</b><div class="route">${esc(f.from)} → ${esc(f.to)}　<span style="color:var(--muted)">${esc(f.dur)}</span></div>
-    <small>＊航班時間依行程手冊，請以旅行社正式行程為準</small></div>`;
+/* ============ 航班（可在小抄修改；改了會作廢舊的記憶，同出發日期的做法） ============ */
+const DEFAULT_FLIGHTS = {
+  out:  {airline:'中華航空', no:'CI057', dep:'23:30', arr:'11:50'},   // 桃園 → 墨爾本
+  back: {airline:'中華航空', no:'CI058', dep:'21:50', arr:'05:40'}    // 墨爾本 → 桃園
+};
+const FLIGHT_SIG = JSON.stringify(DEFAULT_FLIGHTS);
+let FL = JSON.parse(FLIGHT_SIG);
+try{
+  const v = JSON.parse(localStorage.getItem('mel_flights') || 'null');
+  if(v && v.def === FLIGHT_SIG && v.fl) FL = v.fl; else localStorage.removeItem('mel_flights');
+}catch(e){ try{ localStorage.removeItem('mel_flights'); }catch(_){} }
+function saveFlights(){ try{ localStorage.setItem('mel_flights', JSON.stringify({fl:FL, def:FLIGHT_SIG})); }catch(e){} }
+const toMin = hm => { const [h, m] = String(hm || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+// 墨爾本當天的 UTC 時差（夏令時間 +11、平常 +10），用瀏覽器內建時區資料推算
+function melOffsetH(dateStr){
+  try{
+    const part = new Intl.DateTimeFormat('en-US', {timeZone:'Australia/Melbourne', timeZoneName:'shortOffset'})
+      .formatToParts(new Date(dateStr + 'T12:00:00Z')).find(x => x.type === 'timeZoneName').value;
+    const m = part.match(/GMT([+-]\d+)/); return m ? +m[1] : 11;
+  }catch(e){ return 11; }
+}
+// 依起降時間與兩地時差推算飛行時間、抵達是否跨日
+function flightCalc(key){
+  const f = FL[key], out = key === 'out';
+  const date = dayDate(out ? 0 : 5) || DEFAULT_START;
+  const diff = (melOffsetH(date) - 8) * 60;             // 墨爾本比台灣快幾分鐘
+  let dur = toMin(f.arr) - toMin(f.dep) + (out ? -diff : diff);
+  while(dur <= 0) dur += 1440;
+  const arrLocal = toMin(f.dep) + dur + (out ? diff : -diff);
+  return {dur, h:Math.floor(dur / 60), m:dur % 60, plusDay:Math.floor(arrLocal / 1440), tz:diff / 60, odd: dur < 7 * 60 || dur > 13 * 60};
+}
+const flightSearch = f => 'https://www.google.com/search?q=' + encodeURIComponent(`${f.no} flight status`);
+function flightHTML(key){
+  const f = FL[key], c = flightCalc(key), out = key === 'out';
+  const [a, b] = out ? ['TPE 桃園', 'MEL 墨爾本'] : ['MEL 墨爾本', 'TPE 桃園'];
+  return `<div class="flight"><b>✈ ${esc(f.airline)} ${esc(f.no)}</b><div class="route">${a} ${esc(f.dep)} → ${b} ${esc(f.arr)}${c.plusDay ? ` (+${c.plusDay})` : ''}　<span style="color:var(--muted)">飛行約 ${c.h} 小時 ${c.m} 分</span></div>
+    ${c.odd ? '<small style="color:#b42318">⚠️ 依時差推算的飛行時間不太合理，請確認起降時間</small>' : ''}
+    <small>＊可在「小抄」修改航班；請以旅行社正式行程為準 · <a href="${flightSearch(f)}" target="_blank" rel="noopener">🔎 查即時航班</a></small></div>`;
+}
+// 小抄：航班編輯區
+function flightEditHTML(){
+  const changed = JSON.stringify(FL) !== FLIGHT_SIG;
+  const box = (key, title, from, to) => { const f = FL[key];
+    return `<div class="flt"><div class="fltt">${title}</div>
+      <div class="fltrow"><label>航空公司<input data-fl="${key}.airline" value="${esc(f.airline)}"></label><label>航班號<input data-fl="${key}.no" value="${esc(f.no)}"></label></div>
+      <div class="fltrow"><label>${from} 起飛<input type="time" data-fl="${key}.dep" value="${esc(f.dep)}"></label><label>${to} 抵達<input type="time" data-fl="${key}.arr" value="${esc(f.arr)}"></label></div>
+      <div class="fltcalc" id="fltcalc-${key}"></div></div>`; };
+  return `<section id="fltSec"><h3>✈️ 航班資訊</h3>
+    ${box('out', '去程（D1 出發）', '桃園', '墨爾本')}${box('back', '回程（D6 晚上）', '墨爾本', '桃園')}
+    <div class="shopfoot"><span>＊改了會套用到所有行程卡片；飛行時間依出發日期的時差自動推算（墨爾本夏令時間比台灣快 3 小時）。網頁無法自動抓航班時刻，請按「查即時航班」確認，或在對話裡請 Claude 幫忙查</span>
+      <button type="button" id="fltReset" ${changed ? '' : 'hidden'}>↺ 重設為手冊航班</button></div></section>`;
+}
+function updateFlightCalc(){
+  ['out', 'back'].forEach(key => { const el = document.getElementById('fltcalc-' + key); if(!el) return;
+    const c = flightCalc(key), f = FL[key];
+    el.innerHTML = `飛行約 <b>${c.h} 小時 ${c.m} 分</b>${c.plusDay ? `・抵達 +${c.plusDay} 天` : ''}（時差 +${c.tz} 小時）${c.odd ? '<br><span style="color:#b42318">⚠️ 這個飛行時間不太合理，請確認起降時間</span>' : ''}
+      <br><a class="gmap sm" href="${flightSearch(f)}" target="_blank" rel="noopener">🔎 查即時航班 ${esc(f.no)}</a>`; });
+}
+function bindFlights(){
+  const sec = document.getElementById('fltSec'); if(!sec) return;
+  updateFlightCalc();
+  sec.querySelectorAll('[data-fl]').forEach(inp => inp.onchange = inp.oninput = () => {
+    const [key, field] = inp.dataset.fl.split('.'); if(!inp.value && field !== 'airline') return;
+    FL[key][field] = inp.value.trim(); saveFlights(); updateFlightCalc();
+    document.getElementById('fltReset').hidden = JSON.stringify(FL) === FLIGHT_SIG;   // 不重畫，避免輸入框失去焦點
+  });
+  const r = document.getElementById('fltReset');
+  if(r) r.onclick = () => { FL = JSON.parse(FLIGHT_SIG); try{ localStorage.removeItem('mel_flights'); }catch(e){} sec.outerHTML = flightEditHTML(); bindFlights(); };
 }
 try{ const d = localStorage.getItem('mel_day'); if(d!==null) curDay = +d; }catch(e){}
 
@@ -769,7 +843,7 @@ function renderTabs(){
   const tabs = DAYS.map((d,i)=>`<button data-d="${i}"><small>${d.sub}</small>${d.tab}</button>`).join('')
     + `<button data-d="7"><small>實用</small>小抄</button>`;
   $('#tabs').innerHTML = tabs;
-  $('#tabs').onclick = e => { const b = e.target.closest('button'); if(b) selectDay(+b.dataset.d); };
+  $('#tabs').onclick = e => { const b = e.target.closest('button'); if(b) selectDay(+b.dataset.d, true); };
 }
 
 function weatherHTML(idx){
@@ -1106,6 +1180,7 @@ function renderCheat(){
   $('#list').innerHTML = `<div class="dayhead"><h2>旅遊小抄</h2><div class="route">出發前看一次，旅途中隨時查</div></div>
   <div class="cheat">
     ${tripWeatherHTML()}
+    ${flightEditHTML()}
     <section><h3>💱 匯率換算</h3>
       <div class="cvt"><input id="aud" type="number" value="10" min="0"> 澳幣 ≈ <b id="twd"></b> 台幣
       <span style="font-size:12px;color:var(--muted)">（匯率 1 AUD ≈ <input id="rate" type="number" step="0.1" value="${rate}" style="width:60px"> TWD，預設依手冊換算，可自行修改；採買價格會跟著更新）</span></div></section>
@@ -1150,7 +1225,7 @@ function renderCheat(){
       <li>Can I get a tax invoice? — 可以開退稅發票嗎？</li>
       <li>No worries! — 沒問題／不客氣</li></ul></section>
   </div>`;
-  bindWx();
+  bindWx(); bindFlights();
   const calc = ()=>{ $('#twd').textContent = Math.round(($('#aud').value||0)*($('#rate').value||0)).toLocaleString(); };
   $('#aud').oninput = calc; calc();
   $('#rate').oninput = e => { const v = +e.target.value; if(v>0){ rate = v; try{localStorage.setItem('mel_rate',v)}catch(_){}; renderShopRows(); } calc(); };
@@ -1190,12 +1265,15 @@ function renderShopRows(){
   $('#shopCount').textContent = `已買 ${ids.filter(id=>bought[id]).length} / ${ids.length}`;
 }
 
-function selectDay(d){
+// fromTab：使用者點頁籤切換時，畫面捲到「頁籤剛好在最上方」（標題捲上去），不回到頁面最頂端
+function selectDay(d, fromTab){
   curDay = d; try{localStorage.setItem('mel_day',d)}catch(_){}
   document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',+b.dataset.d===d));
-  $('#list').scrollTop = 0; if(window.innerWidth<=820) window.scrollTo({top:0});
+  $('#list').scrollTop = 0;
   map.stop(); map.closePopup();   // 停掉上一個 flyTo，避免蓋掉新的視角
   renderDay();
+  if(fromTab) window.scrollTo({top: $('header.top').offsetHeight});
+  else if(window.innerWidth<=820) window.scrollTo({top:0});
   setTimeout(()=>map.invalidateSize(),50);
 }
 
