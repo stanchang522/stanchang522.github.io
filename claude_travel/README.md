@@ -126,7 +126,8 @@
   - `note`：橘色提醒框
 - `wx`：當日天氣設定，`loc` 對應 `data/climate.js` 的地點（`mel`／`pi`／`dandenong`／`ballarat`）、`evening` 夜間時段的地點（D3 用 `pi`）、`notes` 額外提醒
 - `OAKWOOD`：飯店資料，D2～D5 共用；各天用 `{...OAKWOOD, time:'20:15 入住'}` 加上當天時間
-- `PRODUCTS`：五項採買焦點（Market Lane、ST. ALi、AFL 隊帽、遊戲卡牌、Chemist Warehouse），欄位有名稱、說明、價格 `[標籤, AUD 低, AUD 高]`（單一價格時低＝高）、購買地點
+- `PRODUCTS`：六項採買焦點（Market Lane、ST. ALi、AFL 隊帽、遊戲卡牌、美麗諾羊毛衛生衣、Chemist Warehouse），欄位有名稱、說明、價格 `[標籤, AUD 低, AUD 高]`（單一價格時低＝高）、購買地點、`tips`（⚠️ 購買注意，商品卡片與採買清單都會顯示）
+- `nearTitle`：自訂「附近有趣的地方」標題（例如美麗諾採買卡用「🏬 門市」）
 - `timeNote`：當天的時間說明（目前只有 D2）
 - 每天標題旁顯示當地日期與星期（依出發日期推算）。項目可加 `closed:{days:[星期], msg}`（0＝日），那天剛好休市就顯示紅色警告：目前女王市場（週一、三）、Market Lane Collins St 店（週六、日）
 - `near` 附近景點也可以加 `px` 顯示像素圖
@@ -157,6 +158,7 @@
 - **The AFL Store**：查不到墨爾本市區門市資料，改推 Rebel 旗艦店（Emporium Melbourne 4 樓）。
 - **ST. ALi 總店**（12-18 Yarra Pl, South Melbourne）：手冊建議 D3 午餐前後順路，但不在正式時間表內，卡片標「視時間」。
 - Chadstone 各店樓層未查證，卡片註明以商場地圖為準。
+- **美麗諾羊毛衛生衣（代買，2026-11-09 新增）**：D4 Chadstone 的 Icebreaker（品牌官網資料 Shop B-306，舊資料寫 Shop 324）與 Macpac（Lower Ground）、D5 市區 Kathmandu（門市資料不夠新，出發前查官網）。三家都是紐西蘭品牌；價格 AUD 70–120 為網路零售參考價。
 - **Chemist Warehouse**（2026-10-19 依使用者要求新增，不在兩份原始資料內）：
   - D4 Chadstone 店、D5 Melbourne Central 店（LG 50, 300 Lonsdale St）的地址來自澳洲政府 healthdirect 醫療服務名錄；Bourke St 345 號 London Stores 店只有店家目錄資料，只寫在備註裡，沒有標在地圖上。
   - 價格是參考價：Blackmores 魚油 400 顆 AUD 48.99（官網，未標日期）、Bio Island 兒童 DHA AUD 26.99（官網 2025/1）、Lucas 木瓜霜 75g AUD 13.83（比價網 2026/8 最低價）。Swisse 查不到可靠的澳洲價格，所以沒列。

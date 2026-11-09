@@ -150,6 +150,11 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .fltrow input{width:100%;font:inherit;font-size:13.5px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;color:var(--ink)}
 .fltcalc{font-size:12.5px;color:#334155}
 .flight a{color:#1a73e8}
+.ptips{margin-top:8px;background:#fff;border-radius:8px;padding:6px 8px;font-size:12.5px;color:#4b5563}
+.ptips b{color:#9d174d;font-size:12.5px}
+.ptips ul{margin:2px 0 0;padding-left:16px}
+.ptips li{margin:2px 0}
+.ptips-row{margin-top:3px;color:#9d174d}
 .exnote{font-size:11.5px;color:var(--muted);margin-top:4px !important}
 .cardx.notecard{background:#fff8ef;color:#9a6a2f;font-size:12.5px}
 .col .prod{margin:0;box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -273,6 +278,16 @@ const PRODUCTS = {
     desc:'在大型連鎖通路以官方定價販售，不用擔心被炒價。',
     prices:[['補充包（每包）',6,8],['菁英盒／特典禮盒',85,100]],
     where:['D4 Chadstone：Kmart、Target、JB Hi-Fi、EB Games','D5 Target（222 Bourke St）、EB Games（Melbourne Central）']},
+  merino:{name:'美麗諾羊毛衛生衣（代買）',
+    desc:'Merino Wool Base Layer（衛生衣／發熱衣）。Icebreaker、Macpac、Kathmandu 都是紐西蘭品牌；如果對方指定「澳洲牌」，可以找 XTM（用澳洲美麗諾羊毛）。',
+    prices:[['品牌衛生衣（每件，網路零售參考價）',70,120]],
+    where:['D4 Chadstone：Icebreaker（官網門市資料 Shop B-306）、Macpac（Lower Ground 樓層）','D5 市區：Kathmandu（Emporium 等門市，出發前查官網）'],
+    tips:['先問清楚是不是一定要「澳洲牌」：Icebreaker、Macpac、Kathmandu 都是紐西蘭品牌',
+          '看標籤要寫「100% Merino Wool」，便宜款常是混紡（Merino blend）；觀光區紀念品店品質參差不齊',
+          '厚度看 gsm：150–200 是薄款、可日常穿；250 以上比較保暖',
+          '價格約每件 AUD 70–120，Icebreaker 通常更高，實際以店內為準',
+          '尺寸：歐美版型通常偏大，先問好對方身高體重，或拍下店內尺寸表確認',
+          '同一家店買滿 AUD 300 可退稅，請店員開 Tax Invoice']},
   chemist:{name:'Chemist Warehouse 藥妝保健品',
     desc:'澳洲最大的平價藥妝連鎖（紅黃招牌），保健食品、保養品常比一般藥局便宜。Swisse 等品牌常有折扣，價格以店內標價為準。以下是官網或比價網的參考價，常有半價特價。',
     prices:[['Blackmores 魚油 1000mg 400 顆（官網參考價）',48.99,48.99],['Bio Island 兒童 DHA 60 顆（官網 2025/1 參考價）',26.99,26.99],['Lucas 木瓜霜 75g（比價網 2026/8 最低價）',13.83,13.83]],
@@ -470,6 +485,13 @@ const DAYS = [
      short:'魚油、兒童 DHA、木瓜霜等保健藥妝一次買齊。',products:['chemist'],
      tips:['台灣入境規定：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）','熱門商品常有每人限購數量','木瓜霜、乳液等膏狀、液狀商品要放托運行李'],
      note:'門市在購物中心內，確切位置請看商場地圖（地址來源：澳洲政府 healthdirect 醫療服務名錄）。'},
+    {type:'shop',name:'採買：美麗諾羊毛衛生衣（代買）',gq:'Icebreaker Chadstone',en:'Chadstone 購物中心內：Icebreaker、Macpac',ll:[-37.8858,145.0838],
+     short:'兩家都有美麗諾衛生衣（Base Layer），可以比較款式和價格。',products:['merino'],
+     nearTitle:'🏬 門市', near:[
+      {name:'Icebreaker Chadstone',gq:'Icebreaker Chadstone',ll:[-37.8858,145.0838],desc:'美麗諾羊毛專門品牌，衛生衣款式最齊、價格偏高。品牌官網門市資料：Shop B-306（舊資料寫 Shop 324，以商場地圖為準）。'},
+      {name:'Macpac Chadstone',gq:'Macpac Chadstone',ll:[-37.8866,145.0826],desc:'紐西蘭戶外品牌，有自家美麗諾衛生衣。位於 Lower Ground 樓層。'}
+     ],
+     note:'門市位置來自品牌官網與商場資料，可能有異動，到了先看商場地圖或問服務台。'},
     {type:'meal',img:'docklands', time:'19:00–20:15', drive:'約 35 分鐘', name:'晚餐：Docklands Lotus 中餐 7 菜 1 湯',gq:'Docklands Lotus 16 New Quay Promenade',en:'16 New Quay Promenade, Docklands',ll:[-37.8130,144.9405],
      short:'位於 Docklands 濱水區的中式餐廳。',
      intro:'Docklands 是墨爾本的港區新開發地，水岸邊餐廳林立，晚上可欣賞港灣夜景。',
@@ -558,6 +580,9 @@ const DAYS = [
      short:'D4 沒買齊的保健品在這裡補，和 EB Games 在同一棟。',products:['chemist'],
      tips:['台灣入境規定：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）','熱門商品常有每人限購數量','木瓜霜、乳液等膏狀、液狀商品要放托運行李'],
      note:'地址來源：澳洲政府 healthdirect 醫療服務名錄。附近另一家在 Bourke St 345 號 London Stores 2 樓（店家目錄資料，出發前請確認）。'},
+    {type:'shop',name:'採買：Kathmandu 美麗諾衛生衣',gq:'Kathmandu Melbourne CBD',en:'市區門市（Emporium Melbourne 等）',ll:[-37.8124,144.9641],
+     short:'D4 沒買到或想比價，可以在這裡補買。',products:['merino'],
+     note:'Kathmandu 市區門市的資料不夠新（報導提過 Emporium Melbourne、Little Collins St），出發前請用官網門市查詢確認；也可以在官網商品頁查各門市庫存。'},
     {type:'meal',name:'晚餐：逛街方便（每人發放 30 澳幣）',time:'自由用餐',ll:null,short:'自由用餐。',
      note:'推薦：唐人街 Little Bourke St 的港式點心或拉麵、Degraves St 周邊小館、Southbank 河岸餐廳。若是週三（夏季 11～3 月、冬季 6～8 月），可以去維多利亞女王市場夜市。'},
     {...OAKWOOD, time:'20:00 回飯店'}
@@ -719,7 +744,8 @@ function productHTML(id){
   const pr = PRODUCTS[id]; if(!pr) return '';
   return `<div class="prod ${bought[id]?'got':''}"><div class="pn">🛒 <span>${esc(pr.name)}</span>
     <label><input type="checkbox" data-buy="${id}" ${bought[id]?'checked':''}> 已買到</label></div>
-    <p>${esc(pr.desc)}</p><div class="price">${pr.prices.map(x=>`💰 ${esc(priceTxt(x))}`).join('<br>')}</div></div>`;
+    <p>${esc(pr.desc)}</p><div class="price">${pr.prices.map(x=>`💰 ${esc(priceTxt(x))}`).join('<br>')}</div>
+    ${pr.tips?`<div class="ptips"><b>⚠️ 購買注意</b><ul>${pr.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</div>`;
 }
 // 「在 Google 地圖開啟」：一般搜尋連結，不需要 API key；手機會直接開 Google 地圖 App
 const gmapUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
@@ -984,7 +1010,7 @@ function bodyHTML(it, i){
     ${listItems(it.see, it.type==='spot'?'👀 必看':'👀 看點')}
     ${listItems(it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃')}
     ${listItems(it.tips,'💡 小提醒')}
-    ${near?`<h4>📍 附近有趣的地方</h4><div class="near">${near}</div>`:''}
+    ${near?`<h4>${esc(it.nearTitle||'📍 附近有趣的地方')}</h4><div class="near">${near}</div>`:''}
     ${it.note?`<div class="note">${esc(it.note)}</div>`:''}
   </div>`;
 }
@@ -1010,7 +1036,7 @@ function colHTML(it, i, num){
   [[it.see, it.type==='spot'?'👀 必看':'👀 看點'], [it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃'], [it.tips, '💡 小提醒']]
     .forEach(([lst, title]) => { if(lst && lst.length) cards.push(`<div class="cardx">${listItems(lst, title)}</div>`); });
   if(it.near && it.near.length){
-    cards.push(`<div class="nearlabel">📍 附近有趣的地方</div>`);
+    cards.push(`<div class="nearlabel">${esc(it.nearTitle||'📍 附近有趣的地方')}</div>`);
     it.near.forEach((x,j) => cards.push(`<div class="cardx ${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`));
   }
   if(it.note) cards.push(`<div class="cardx notecard">${esc(it.note)}</div>`);
@@ -1255,7 +1281,8 @@ function renderShopRows(){
       <input type="checkbox" data-buy="${id}" ${bought[id]?'checked':''}>
       <div><div class="nm">${esc(pr.name)}</div>
         <div class="meta">${pr.prices.map(x=>esc(priceTxt(x))).join('<br>')}</div>
-        <div class="meta">📍 ${pr.where.map(esc).join('<br>📍 ')}</div></div></div>`)
+        <div class="meta">📍 ${pr.where.map(esc).join('<br>📍 ')}</div>
+        ${pr.tips?`<div class="meta ptips-row">⚠️ ${pr.tips.map(esc).join('<br>⚠️ ')}</div>`:''}</div></div>`)
     .concat(customShop.map(c=>`<div class="row ${bought[c.id]?'got':''}">
       <input type="checkbox" data-buy="${c.id}" ${bought[c.id]?'checked':''}>
       <div><div class="nm">${esc(c.name)}</div><div class="meta">自己新增</div></div>
