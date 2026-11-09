@@ -139,6 +139,10 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .cardx.go b::after{content:" 📍";font-size:11px}
 .cardx.go.on{background:#fff8ef;box-shadow:inset 3px 0 0 var(--ochre),0 1px 2px rgba(0,0,0,.08)}
 .cardx.go p{font-size:12.5px;color:#4b5563;margin-top:1px}
+.dow{display:inline-block;margin-left:8px;font-size:13px;font-weight:700;color:#fff;background:var(--ochre);border-radius:999px;padding:1px 10px;vertical-align:3px}
+.closedcard{background:#fff1f0 !important;color:#b42318 !important;font-weight:700;font-size:13px;border:1px solid #f5c2bd}
+.cardx .pxwrap{margin-top:6px}
+.exnote{font-size:11.5px;color:var(--muted);margin-top:4px !important}
 .cardx.notecard{background:#fff8ef;color:#9a6a2f;font-size:12.5px}
 .col .prod{margin:0;box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .nearlabel{font-size:12px;font-weight:700;color:var(--navy);margin:4px 4px -2px}
@@ -297,8 +301,8 @@ const DAYS = [
      buy:['桃園機場免稅店：台灣伴手禮（鳳梨酥、茶葉）可當送給澳洲朋友的禮物'],
      tips:['行動電源、鋰電池只能放隨身行李','隨身液體每瓶 ≤100ml，總量 1 公升透明袋','澳洲入境對食物檢疫非常嚴格，肉乾、蛋製品、新鮮蔬果別帶','準備八字型 (Type I) 轉接頭'],
      near:[]},
-    {type:'meal',name:'晚餐：機上餐',ll:null,short:'航空公司機上供餐。'},
-    {type:'transport',name:'飛往墨爾本',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',time:'23:30 起飛',short:'夜宿機上，隔天中午 11:50 抵達墨爾本。',
+    {type:'meal',name:'晚餐：機上餐',px:'plane-meal',ll:null,short:'航空公司機上供餐。'},
+    {type:'transport',name:'飛往墨爾本',px:'arrival',gq:'Melbourne Airport',en:'Melbourne Airport (MEL)',ll:MEL,img:'mel-airport',time:'23:30 起飛',short:'夜宿機上，隔天中午 11:50 抵達墨爾本。',
      intro:'飛行途中會跨過赤道，抵達時南半球的季節與台灣相反。下機前會發入境卡（Incoming Passenger Card），有攜帶食品、藥品、木製品都要老實勾選申報。',
      see:[],buy:[],tips:['入境卡食物申報不確定就勾「Yes」，申報了被沒收不會罰款，沒申報被查到可能罰款'],near:[]}
   ]
@@ -313,20 +317,20 @@ const DAYS = [
      intro:'墨爾本機場位於市區西北約 23 公里。入境時行李可能需要過檢疫 X 光，排隊時間視航班而定。',
      see:[],buy:['機場出口有電信櫃台可買 SIM 卡（Telstra 訊號覆蓋最廣，郊區景點也比較穩）'],
      tips:['出關後把手錶調成當地時間','可先在機場 ATM 或換匯處準備少量澳幣現金'],near:[]},
-    {type:'meal',name:'午餐：義大利餐分享餐',time:'14:00–15:00',drive:'進市區約 25 公里・35–45 分鐘',ll:null,short:'旅行社未公布店家。',
+    {type:'meal',name:'午餐：義大利餐分享餐',px:'meal-pasta',time:'14:00–15:00',drive:'進市區約 25 公里・35–45 分鐘',ll:null,short:'旅行社未公布店家。',
      note:'墨爾本的義大利菜水準很高（二戰後有大量義大利移民），Lygon Street 被稱為「小義大利」。'},
-    {type:'spot',img:'st-patricks', time:'15:15–16:00', name:'聖派翠克大教堂',gq:'St Patrick\'s Cathedral Melbourne',en:"St Patrick's Cathedral",ll:[-37.8100,144.9762],
+    {type:'spot',img:'st-patricks', px:'st-patricks', time:'15:15–16:00', name:'聖派翠克大教堂',gq:'St Patrick\'s Cathedral Melbourne',en:"St Patrick's Cathedral",ll:[-37.8100,144.9762],
      short:'澳洲最大、最高的哥德式教堂之一，藍石外觀與彩繪玻璃非常壯觀。',
      intro:'聖派翠克大教堂是墨爾本天主教總教區的主教座堂，從 1858 年開始興建、前後花了約 80 年才完成。外牆是維多利亞省特產的深灰色藍石 (bluestone)，三座尖塔高聳，是哥德復興式建築的經典。',
      see:['教堂內的彩繪玻璃窗，晴天時光線灑進來最美','高聳的拱頂與管風琴','教堂前庭的水景步道（Pilgrim Path）'],
      buy:[],
      tips:['教堂內請保持安靜、脫帽，彌撒進行時不要走動拍照','入內免費'],
      near:[
-      {name:'維多利亞議會大廈',gq:'Parliament House Melbourne',ll:[-37.8110,144.9737],desc:'19 世紀的古典建築，台階前是熱門拍照點，平日有免費導覽。'},
-      {name:'公主劇院',gq:'Princess Theatre Melbourne',ll:[-37.8105,144.9727],desc:'1886 年開幕的老劇院，長年上演百老匯音樂劇。'},
-      {name:'唐人街 Little Bourke St',gq:'Chinatown Melbourne',ll:[-37.8115,144.9680],desc:'西方世界最古老的唐人街之一，牌樓與中式餐館林立。'}
+      {name:'維多利亞議會大廈',px:'parliament',gq:'Parliament House Melbourne',ll:[-37.8110,144.9737],desc:'19 世紀的古典建築，台階前是熱門拍照點，平日有免費導覽。'},
+      {name:'公主劇院',px:'princess-theatre',gq:'Princess Theatre Melbourne',ll:[-37.8105,144.9727],desc:'1886 年開幕的老劇院，長年上演百老匯音樂劇。'},
+      {name:'唐人街 Little Bourke St',px:'chinatown',gq:'Chinatown Melbourne',ll:[-37.8115,144.9680],desc:'西方世界最古老的唐人街之一，牌樓與中式餐館林立。'}
      ]},
-    {type:'spot',img:'queen-vic-market', time:'16:15–17:00', drive:'約 10 分鐘', name:'維多利亞女王市場',gq:'Queen Victoria Market',en:'Queen Victoria Market',ll:[-37.8076,144.9568],
+    {type:'spot',img:'queen-vic-market', px:'queen-vic-market', time:'16:15–17:00', drive:'約 10 分鐘', name:'維多利亞女王市場',gq:'Queen Victoria Market',closed:{days:[1,3],msg:'女王市場週一、週三白天休市。部分年份 11 月中起週三晚上有夏季夜市，請先查官網'},en:'Queen Victoria Market',ll:[-37.8076,144.9568],
      short:'南半球最大的露天市場，生鮮、熟食、紀念品一次逛齊。',
      intro:'維多利亞女王市場（當地人叫 Queen Vic Market）營業超過 140 年，佔地約 7 公頃。分成肉類海鮮館、熟食館 (Deli Hall，裝飾藝術風格建築)、蔬果區與一般商品區，是採買伴手禮和體驗在地生活的好地方。',
      see:['Deli Hall 熟食館：起司、火腿、橄欖琳瑯滿目','肉類海鮮館的生蠔攤','週末的街頭藝人表演'],
@@ -338,10 +342,10 @@ const DAYS = [
       {name:'維多利亞州立圖書館',gq:'State Library Victoria',ll:[-37.8098,144.9652],desc:'八角形 La Trobe 閱覽室是全澳最美的圖書館空間，免費參觀。'},
       {name:'Flagstaff Gardens',gq:'Flagstaff Gardens Melbourne',ll:[-37.8106,144.9545],desc:'市區最古老的公園之一，適合散步休息。'}
      ]},
-    {type:'shop',name:'採買：Market Lane Coffee 女王市場店',gq:'Market Lane Coffee 462 Queen St Melbourne',en:'462 Queen St（市場 Mercat Cross 建築）',ll:[-37.8068,144.9577],
+    {type:'shop',name:'採買：Market Lane Coffee 女王市場店',px:'market-lane',gq:'Market Lane Coffee 462 Queen St Melbourne',en:'462 Queen St（市場 Mercat Cross 建築）',ll:[-37.8068,144.9577],
      short:'Market Lane 聯名隨行杯、新鮮烘焙咖啡豆。',products:['marketlane'],
      note:'⚠️ 依行程抵達時店可能已打烊，買不到可以等 D5 去 Collins St 店（只有平日營業）。手冊寫的 Therry St 轉角舊店已經關閉，現在搬到 Queen St。'},
-    {type:'spot',img:'fitzroy-gardens', time:'17:15–18:00', drive:'約 10 分鐘', name:'費茲洛花園',gq:'Fitzroy Gardens Melbourne',en:'Fitzroy Gardens',ll:[-37.8130,144.9800],
+    {type:'spot',img:'fitzroy-gardens', px:'cooks-cottage', time:'17:15–18:00', drive:'約 10 分鐘', name:'費茲洛花園',gq:'Fitzroy Gardens Melbourne',en:'Fitzroy Gardens',ll:[-37.8130,144.9800],
      short:'英式庭園，有庫克船長小屋、精靈樹和溫室花房。',
      intro:'費茲洛花園建於 1848 年，步道規劃成英國國旗「米字型」圖案。園內最有名的是庫克船長小屋 (Cooks\' Cottage)，這是庫克船長父母在英國的老家，1934 年被一磚一瓦拆下運到墨爾本重建。',
      see:['庫克船長小屋（Cooks\' Cottage）及英式香草花園','精靈樹 (Fairies\' Tree)：樹幹上雕滿精靈和澳洲動物','溫室花房 (Conservatory)：依季節更換花展','參天的榆樹林蔭大道，秋天（3～5 月）轉黃最美'],
@@ -352,7 +356,7 @@ const DAYS = [
       {name:'財政花園',gq:'Treasury Gardens Melbourne',ll:[-37.8140,144.9755],desc:'緊鄰費茲洛花園，有甘迺迪紀念碑。'},
       {name:'精靈樹',gq:'Fairies Tree Fitzroy Gardens',ll:[-37.8133,144.9807],desc:'1930 年代雕刻家在老樹幹上雕的童話世界，小朋友最愛。'}
      ]},
-    {type:'meal',name:'晚餐：德國豬腳餐（含一杯啤酒）',time:'18:45–20:00',ll:null,short:'旅行社未公布店家。',
+    {type:'meal',name:'晚餐：德國豬腳餐（含一杯啤酒）',px:'meal-knuckle',time:'18:45–20:00',ll:null,short:'旅行社未公布店家。',
      note:'可以試試澳洲在地啤酒，像 Victoria Bitter (VB)、Carlton Draught 都是墨爾本本地品牌。'},
     {...OAKWOOD, time:'20:15 入住'}
   ]
@@ -372,7 +376,7 @@ const DAYS = [
       {name:'St Kilda 聖基達碼頭',gq:'St Kilda Pier',ll:[-37.8636,144.9727],desc:'碼頭盡頭的防波堤住著野生小企鵝，夜裡有機會看到。'},
       {name:'Luna Park 月神公園',gq:'Luna Park Melbourne',ll:[-37.8679,144.9740],desc:'1912 年的復古遊樂園，大嘴笑臉入口是地標。'}
      ]},
-    {type:'meal',img:'southbank', time:'11:30–13:00', drive:'返回南岸約 30–40 分鐘', name:'午餐：Meat & Wine Co. Southbank',gq:'The Meat & Wine Co Southbank',en:'西式，以南非風格炭烤牛排聞名',ll:[-37.8212,144.9618],
+    {type:'meal',img:'southbank', px:'meal-steak', time:'11:30–13:00', drive:'返回南岸約 30–40 分鐘', name:'午餐：Meat & Wine Co. Southbank',gq:'The Meat & Wine Co Southbank',en:'西式，以南非風格炭烤牛排聞名',ll:[-37.8212,144.9618],
      short:'炭烤牛排、豬肋排是招牌。',
      intro:'The Meat & Wine Co 是以非洲式炭烤 (basting) 聞名的牛排館，Southbank 分店位於 Freshwater Place，靠近雅拉河畔。',
      see:[],buy:['招牌 Rump 或 Scotch Fillet 牛排、Basted Pork Ribs 豬肋排'],tips:['牛排熟度建議五分熟 (medium)，澳洲牛肉油花少，太熟會偏柴'],
@@ -396,7 +400,7 @@ const DAYS = [
       {name:'San Remo 漁港',gq:'San Remo Jetty',ll:[-38.5230,145.3700],desc:'每天中午有免費餵鵜鶘秀，海鮮炸魚薯條很有名。'},
       {name:'Churchill Island 邱吉爾島',gq:'Churchill Island Heritage Farm',ll:[-38.4990,145.3380],desc:'傳統農場體驗，看剪羊毛、牧羊犬表演。'}
      ]},
-    {type:'meal',name:'晚餐：澳洲燒烤 BBQ 共享盤',time:'17:30–19:00',drive:'往菲利普島約 40 公里・40–45 分',ll:null,short:'旅行社未公布店家，在島上用餐後再去看企鵝。'},
+    {type:'meal',name:'晚餐：澳洲燒烤 BBQ 共享盤',px:'bbq',time:'17:30–19:00',drive:'往菲利普島約 40 公里・40–45 分',ll:null,short:'旅行社未公布店家，在島上用餐後再去看企鵝。'},
     {type:'spot',img:'penguin-parade', px:'penguin-parade', time:'19:30–21:30（依日落調整）', name:'菲利普島 神仙小企鵝夜歸巢',gq:'Penguin Parade Phillip Island',en:'Penguin Parade, Phillip Island',ll:[-38.5108,145.1500],
      short:'日落後數百隻世界最小的企鵝成群上岸回巢。',
      intro:'神仙小企鵝 (Little Penguin) 身高只有約 33 公分，是全世界最小的企鵝。牠們白天出海捕魚，日落後成群結隊從 Summerland Beach 上岸，搖搖擺擺走回沙丘裡的巢穴，有時一晚可超過千隻。',
@@ -405,7 +409,7 @@ const DAYS = [
      tips:['🚫 全區嚴禁拍照、錄影（企鵝眼睛怕閃光），違者會被要求離場','企鵝歸巢時間依日落時間調整，通常晚上 7～9 點','回程車程約 2 小時，回到飯店可能已近午夜'],
      near:[
       {name:'The Nobbies 海岸步道',gq:'The Nobbies Centre Phillip Island',ll:[-38.5170,145.1100],desc:'壯觀的懸崖海岸木棧道，可遠眺海豹岩。'},
-      {name:'菲利普島 GP 賽車場',gq:'Phillip Island Grand Prix Circuit',ll:[-38.5040,145.2340],desc:'MotoGP 澳洲站場地，設有賽車博物館。'},
+      {name:'菲利普島 GP 賽車場',px:'gp-circuit',gq:'Phillip Island Grand Prix Circuit',ll:[-38.5040,145.2340],desc:'MotoGP 澳洲站場地，設有賽車博物館。'},
       {name:'無尾熊保育中心',gq:'Koala Conservation Reserve Phillip Island',ll:[-38.4980,145.2550],desc:'樹頂步道可以平視野生無尾熊。'}
      ]},
     {...OAKWOOD, time:'23:15 回到飯店', drive:'約 140 公里・1 小時 50 分'}
@@ -420,7 +424,12 @@ const DAYS = [
      intro:'普芬比利蒸汽火車建於 1900 年代初期，是澳洲保存最完整的蒸汽鐵路之一。從 Belgrave 站出發，穿越高聳的山梣樹 (Mountain Ash) 雨林和木造棧橋，乘客可以坐在敞開的車窗邊、雙腳懸在車外，非常有名。',
      see:['Monbulk Creek 木造棧橋：火車過橋時是最佳拍照點','坐在車窗窗台晃腳（經典照）','火車頭噴出白煙、鳴笛的瞬間','雨林中的野生鸚鵡和琴鳥 (Lyrebird)'],
      buy:['車站紀念品店的蒸汽火車模型、復古車票紀念品'],
-     tips:['坐窗邊時雙手要抓緊扶桿，不可站起來或把頭伸出去','依季節偶有火災風險日停駛或改用柴油車頭','火車上會有煤灰，避免穿白色衣服'],
+     extra:[{title:'🪑 座位攻略', items:[
+       '去程（從 Belgrave 出發）：坐面對前進方向的「右邊」。出發約 5 分鐘就會經過經典的 Monbulk Creek 木棧橋大彎，右邊可以拍到整列火車在木橋上過彎、冒蒸汽的畫面',
+       '回程（往 Belgrave 方向，如果行程有搭回程）：改坐「左邊」，才能再拍到過彎與山林的畫面',
+       '盡量挑中後段車廂，過彎時比較容易拍到整列火車蜿蜒的長畫面'],
+       note:'座位方向整理自旅遊網誌的分享，實際以現場為準'}],
+     tips:['坐窗邊時雙手要抓緊扶桿，不可站起來或把頭伸出去','依季節偶有火災風險日停駛或改用柴油車頭','火車燒煤炭，行駛中會飄落細小煤粒和灰燼：建議戴眼鏡或墨鏡保護眼睛，不要穿淺色衣服'],
      near:[
       {name:'Sky High 丹頓農山頂',gq:'SkyHigh Mount Dandenong',ll:[-37.8340,145.3570],desc:'海拔 633 公尺的觀景台，可俯瞰整個墨爾本，還有英式花園迷宮。'},
       {name:'Sassafras 小鎮',gq:'Miss Marple\'s Tearoom Sassafras',ll:[-37.8810,145.3540],desc:'Miss Marple\'s 茶屋的司康 (scones) 很有名，小鎮充滿古董店。'},
@@ -477,6 +486,7 @@ const DAYS = [
      near:[
       {name:'AC/DC Lane',gq:'AC/DC Lane Melbourne',ll:[-37.8158,144.9715],desc:'以澳洲搖滾樂團 AC/DC 命名的塗鴉巷，風格更搖滾。'},
       {name:'Flinders Street 車站',gq:'Flinders Street Station',ll:[-37.8183,144.9671],desc:'黃色外牆、綠色圓頂的百年車站，墨爾本最經典地標。'},
+      {name:'Flinders St 復古拍貼機',px:'photo-booth',gq:'Flinders St Photobooth Metro Auto Photo',ll:[-37.8179,144.9668],desc:'Flinders Street 車站內、Boost Juice 旁，超過 65 年的投幣式黑白底片拍貼機（Metro Auto Photo），24 小時開放，約 3 分鐘出一條四格照片。只收 1、2 澳幣硬幣，價格約 8 澳幣，先準備好零錢。'},
       {name:'聖保羅大教堂',gq:'St Paul\'s Cathedral Melbourne',ll:[-37.8170,144.9676],desc:'聖公會主教座堂，與 Flinders 車站隔街相望。'}
      ]},
     {type:'spot',img:'royal-arcade', time:'10:30–11:15', name:'皇家拱廊',gq:'Royal Arcade Melbourne',en:'Royal Arcade',ll:[-37.8144,144.9640],
@@ -526,7 +536,7 @@ const DAYS = [
       {name:'Birrarung Marr 公園',gq:'Birrarung Marr',ll:[-37.8187,144.9730],desc:'沿雅拉河的公園，有大型鐘塔裝置藝術。'},
       {name:'雅拉河畔步道',gq:'Southbank Promenade Melbourne',ll:[-37.8195,144.9675],desc:'沿河散步可走到 Southbank，夜景很美。'}
      ]},
-    {type:'shop',name:'採買：Market Lane Coffee Collins St 店',gq:'Market Lane Coffee 8 Collins St Melbourne',en:'8 Collins St（Portland House）',time:'16:00–19:30 自由逛街',ll:[-37.8140,144.9729],
+    {type:'shop',name:'採買：Market Lane Coffee Collins St 店',closed:{days:[0,6],msg:'Market Lane Collins St 店週末公休'},gq:'Market Lane Coffee 8 Collins St Melbourne',en:'8 Collins St（Portland House）',time:'16:00–19:30 自由逛街',ll:[-37.8140,144.9729],
      short:'D2 沒買到 Market Lane 的話，在這裡補買。',products:['marketlane'],
      note:'⚠️ 只有平日營業（7:00–17:00），週末公休，要在 17:00 前到。'},
     {type:'shop',name:'採買：Rebel 運動用品旗艦店',gq:'rebel Emporium Melbourne',en:'Emporium Melbourne 4 樓',ll:[-37.8121,144.9637],
@@ -599,7 +609,11 @@ try{ const m = localStorage.getItem('mel_month'); if(m!==null && TRIP_MONTHS.inc
 const CLIMO = window.CLIMO || null;
 const DEFAULT_START = '2026-11-10';   // 出發日期預設（D1＝出發日），可在小抄修改
 let tripStart = DEFAULT_START;
-try{ const v = localStorage.getItem('mel_start'); if(v) tripStart = v; }catch(e){}
+// 記住使用者選的日期時，連同當時的預設值一起存；之後預設值改了，舊的選擇就作廢、改用新預設
+try{
+  const v = JSON.parse(localStorage.getItem('mel_start') || 'null');
+  if(v && v.def === DEFAULT_START && v.d) tripStart = v.d; else localStorage.removeItem('mel_start');
+}catch(e){ try{ localStorage.removeItem('mel_start'); }catch(_){} }
 function syncMonthToStart(){ if(!tripStart) return; const mm = +tripStart.slice(5,7)-1; if(TRIP_MONTHS.includes(mm)) month = mm; }
 syncMonthToStart();
 const pad2 = n => String(n).padStart(2,'0');
@@ -712,19 +726,18 @@ function pixelHTML(it){
 }
 // 只播放畫面上看得到的畫布，捲出畫面或收合時自動暫停
 const pxVisible = new Set();
-const pxIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? pxVisible.add(e.target) : pxVisible.delete(e.target))) : null;
+const pxIO = 'IntersectionObserver' in window ? new IntersectionObserver(es => { es.forEach(e => e.isIntersecting ? pxVisible.add(e.target) : pxVisible.delete(e.target)); pxStart(); }) : null;
+let pxRunning = false;
+function pxStart(){ if(!pxRunning && !reduceMotion && pxVisible.size){ pxRunning = true; requestAnimationFrame(pxLoop); } }
 function drawPx(cv, t){ const sc = PX[cv.dataset.px]; if(!sc) return; const ctx = cv.getContext('2d'); ctx.imageSmoothingEnabled = false; sc.draw(ctx, t); cv._t = t; }
 function mountPixel(root){
   root.querySelectorAll('canvas[data-px]').forEach(cv => { if(cv._m) return; cv._m = 1; drawPx(cv, 0); if(pxIO) pxIO.observe(cv); });
 }
 function pxLoop(ts){
-  if(!reduceMotion){
-    const t = Math.floor(ts / 1000 * 12) / 12;      // 每秒 12 格，保留 8-bit 的頓點感
-    pxVisible.forEach(cv => { if(!cv.isConnected){ pxVisible.delete(cv); return; } if(cv.offsetParent && cv._t !== t) drawPx(cv, t); });
-  }
-  requestAnimationFrame(pxLoop);
+  const t = Math.floor(ts / 1000 * 12) / 12;        // 每秒 12 格，保留 8-bit 的頓點感
+  pxVisible.forEach(cv => { if(!cv.isConnected){ pxVisible.delete(cv); return; } if(cv.offsetParent && cv._t !== t) drawPx(cv, t); });
+  if(pxVisible.size) requestAnimationFrame(pxLoop); else pxRunning = false;   // 沒有看得到的動畫就停止
 }
-requestAnimationFrame(pxLoop);
 
 function flightHTML(f){
   return `<div class="flight"><b>✈ ${esc(f.no)}</b><div class="route">${esc(f.from)} → ${esc(f.to)}　<span style="color:var(--muted)">${esc(f.dur)}</span></div>
@@ -834,11 +847,13 @@ function bindWx(){
   const sd = $('#startDate');
   if(sd) sd.onchange = e => {
     if(!e.target.value){ e.target.value = tripStart; return; }   // 不允許清空，維持原日期
-    tripStart = e.target.value; try{localStorage.setItem('mel_start',tripStart)}catch(_){}; syncMonthToStart(); refreshWeather(); };
+    tripStart = e.target.value; try{localStorage.setItem('mel_start', JSON.stringify({d:tripStart, def:DEFAULT_START}))}catch(_){}; syncMonthToStart(); refreshWeather(); };
   const sr = $('#startReset');
   if(sr) sr.onclick = () => { tripStart = DEFAULT_START; try{localStorage.removeItem('mel_start')}catch(_){}; syncMonthToStart(); refreshWeather(); };
 }
 
+// 自訂資訊卡（例如蒸汽火車的座位攻略）
+function extraHTML(x, cls){ return `<div class="${cls}">${listItems(x.items, esc(x.title))}${x.note?`<p class="exnote">＊${esc(x.note)}</p>`:''}</div>`; }
 function listItems(lst,title,cls=''){ return lst&&lst.length?`<h4>${title}</h4><ul class="${cls}">${lst.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''; }
 
 /* ============ 每日行程：卡片模式（左右滑動＋下方詳細內容）／列表模式 ============ */
@@ -856,6 +871,14 @@ function openMap(open){
   if(mapOpen) setTimeout(() => { map.invalidateSize(); if(pendingView){ const f = pendingView; pendingView = null; f(); } }, 30);
 }
 
+const WD = '日一二三四五六';
+function dayDateLabel(idx){ const d = dayDate(idx); if(!d) return ''; return `${mmdd(d)}（${WD[new Date(d+'T00:00:00').getDay()]}）`; }
+// 依出發日期算出這天星期幾，碰到休市日就顯示警告
+function closedHTML(it, cls){
+  const d = dayDate(curDay); if(!d || !it.closed) return '';
+  const wd = new Date(d+'T00:00:00').getDay(); if(!it.closed.days.includes(wd)) return '';
+  return `<div class="${cls||'cardx'} closedcard">⚠️ 這天是 ${mmdd(d)} 星期${WD[wd]}：${esc(it.closed.msg)}</div>`;
+}
 function itemNums(d){ let n = 0; return d.items.map(it => (it.ll && it.type!=='shop') ? ++n : null); }
 function photoFig(it){
   const ph = photo(it.img); if(!ph) return '';
@@ -878,10 +901,11 @@ function bodyHTML(it, i){
   const prods = (it.products||[]).map(productHTML).join('');
   const hasDetail = it.intro||it.note||prods||(it.tips&&it.tips.length)||(it.see&&it.see.length)||(it.near&&it.near.length);
   if(!hasDetail) return '';
-  const near = (it.near||[]).map((x,j)=>`<div class="${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${gmapBtn(x.gq,true)}</div>`).join('');
+  const near = (it.near||[]).map((x,j)=>`<div class="${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`).join('');
   return `<div class="detail">
     ${photoFig(it)}${pixelHTML(it)}
     ${it.intro?`<div>${esc(it.intro)}</div>`:''}
+    ${(it.extra||[]).map(x => extraHTML(x, '')).join('')}
     ${prods}
     ${listItems(it.see, it.type==='spot'?'👀 必看':'👀 看點')}
     ${listItems(it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃')}
@@ -895,7 +919,7 @@ function listItemHTML(it, i, num){
   const ph = photo(it.img);
   return `${it.drive?`<div class="drive">🚌 ${esc(it.drive)}</div>`:''}<div class="item ${ph?'has-thumb':''}" id="i${i}" data-i="${i}">
     ${ph?`<img class="thumb" src="${ph.src}" alt="" loading="lazy">`:''}
-    ${headHTML(it, num)}${bodyHTML(it, i)}</div>`;
+    ${headHTML(it, num)}${closedHTML(it, 'note')}${bodyHTML(it, i)}</div>`;
 }
 // 卡片模式（Trello 版型）：每個行程是一整欄，欄內每段資訊都是獨立小卡片
 function colHTML(it, i, num){
@@ -907,14 +931,16 @@ function colHTML(it, i, num){
   const info = `${it.short?`<p class="lead">${esc(it.short)}</p>`:''}${it.flight?flightHTML(it.flight):''}${gmapBtn(it.gq)}`;
   if(info.trim()) cards.push(`<div class="cardx">${info}</div>`);
   if(it.intro) cards.push(`<div class="cardx"><h4>📖 介紹</h4><p>${esc(it.intro)}</p></div>`);
+  (it.extra||[]).forEach(x => cards.push(extraHTML(x, 'cardx')));
   (it.products||[]).forEach(id => cards.push(productHTML(id)));
   [[it.see, it.type==='spot'?'👀 必看':'👀 看點'], [it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃'], [it.tips, '💡 小提醒']]
     .forEach(([lst, title]) => { if(lst && lst.length) cards.push(`<div class="cardx">${listItems(lst, title)}</div>`); });
   if(it.near && it.near.length){
     cards.push(`<div class="nearlabel">📍 附近有趣的地方</div>`);
-    it.near.forEach((x,j) => cards.push(`<div class="cardx ${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${gmapBtn(x.gq,true)}</div>`));
+    it.near.forEach((x,j) => cards.push(`<div class="cardx ${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`));
   }
   if(it.note) cards.push(`<div class="cardx notecard">${esc(it.note)}</div>`);
+  const closed = closedHTML(it); if(closed) cards.unshift(closed);
   return `<section class="col" id="i${i}" data-i="${i}" style="--c:${t.hex}" aria-label="${esc(it.name)}">
     <header class="colhead">
       <div class="k" style="color:${t.hex}"><span class="scnum" style="background:${t.hex}">${it.type==='shop'?'🛒':(num??'·')}</span>${t.label}${it.time?`<span class="time">${esc(it.time)}</span>`:''}</div>
@@ -940,7 +966,7 @@ function renderDay(){
     ? `<div class="tl">${d.items.map((it,i)=>listItemHTML(it,i,nums[i])).join('')}</div>`
     : `<div class="stripnav"><button type="button" data-step="-1" aria-label="上一個">‹</button><span id="stripPos"></span><button type="button" data-step="1" aria-label="下一個">›</button></div>
        <div class="board" id="board">${d.items.map((it,i)=>colHTML(it,i,nums[i])).join('')}</div>`;
-  $('#list').innerHTML = `<div class="dayhead"><h2>${d.title}</h2><div class="route">${d.route}</div></div>${d.timeNote?`<div class="timenote">⏱ ${d.timeNote}</div>`:''}${weatherHTML(curDay)}${viewBarHTML()}${body}`;
+  $('#list').innerHTML = `<div class="dayhead"><h2>${d.title}${dayDateLabel(curDay)?`<span class="dow">${dayDateLabel(curDay)}</span>`:''}</h2><div class="route">${d.route}</div></div>${d.timeNote?`<div class="timenote">⏱ ${d.timeNote}</div>`:''}${weatherHTML(curDay)}${viewBarHTML()}${body}`;
   mountPixel($('#list'));
   bindWx();
 
