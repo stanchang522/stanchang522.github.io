@@ -7,6 +7,7 @@
 ## 使用方式
 
 - 直接雙擊 `index.html` 用瀏覽器開啟即可（需要網路載入地圖）。
+- **發佈前**：把 `index.html` 裡 `images.js`、`climate.js`、`scenes.js` 的 `?v=` 版本號換成新的，避免手機瀏覽器用到快取的舊檔。
 - 開發預覽：`calude_test/.claude/launch.json` 的 `melbourne-trip` 設定（python http.server，port 8766）。
 - 位置：GitHub Pages repo `stanchang522.github.io` 的 `claude_travel/` 資料夾（2026-11-09 從 `claude_retail/calude_travel` 搬入）。發佈後網址為 `https://stanchang522.github.io/claude_travel/`。
 
@@ -26,8 +27,18 @@
 | 附近景點 | 展開後以白色小點顯示在地圖上，點名稱可飛過去 |
 | Google 地圖 | 每個景點、餐廳、商店與附近景點都有「📍 在 Google 地圖開啟」按鈕（卡片、附近景點、地圖彈窗）；只是搜尋連結，**不需要 API key、免費**，手機會直接開 Google 地圖 App 看評論、營業時間、導航 |
 | 天氣穿搭 | 「小抄」最上方是整趟旅程的總覽（出發日期、D2～D6 各天溫度、下雨比例＋行李建議），D2～D6 各有當天卡片，**預設收合成一行摘要**（溫度、☔、🐧 體感、預報／平均），點「穿搭」展開完整建議，展開狀態會記住（`mel_wx_open`）。**出發日期預設 11/10**，可改成 10/1～11/30，改了會重算各天日期與溫度，也可一鍵重設回 11/10；月份由出發日期決定。溫度來自各地點**歷年實際資料**；落在今天起 16 天內的日子自動改成 **Open-Meteo 即時預報**，7 天以上標「遠期預報，僅供參考」。D3 另外分開顯示企鵝歸巢時段（20–21 點）的**氣溫、體感溫度、風速** |
-| 旅遊小抄 | 旅程天氣與穿搭（出發日期）、✈️ 航班資訊（可編輯）、匯率換算、**可勾選的採買清單（可新增自訂項目）**、退稅 TRS、ETA 與檢疫、時差電壓、交通、小費、伴手禮、實用英文；地圖顯示全部景點總覽 |
+| 早起選配 | D3、D4 早上第一欄是 Patricia Coffee Brewers（`PATRICIA`，07:00–07:45，最晚 08:15 回飯店）；平日 7:00–16:00 營業、週末公休，出發日期改到週末會自動顯示警告 |
+| 重點店家 | Chemist Warehouse 列為 ⭐ 重點店家：D4、D5 卡片標題有「⭐ 重點店家」、地圖地標是 ⭐、有專屬像素圖；D4 卡片附 Chadstone 採買順序建議；小抄有「⭐ 重點店家」區塊（門市與時間、要買什麼、現場購物技巧） |
+| 旅遊小抄 | 旅程天氣與穿搭（出發日期）、✈️ 航班資訊（可編輯）、⭐ 重點店家 Chemist Warehouse、匯率換算、📦 精選採購清單（代購 13 項 34 件，依 PDF 三大分類顯示、每項標示在哪家店買、可打勾、顯示已買件數）、**可勾選的採買清單（可新增自訂項目）**、退稅 TRS、ETA 與檢疫、時差電壓、交通、小費、伴手禮、實用英文；地圖顯示全部景點總覽 |
 | 手機版 | 寬度 ≤ 820px 時，地圖**預設收合**，按「🗺 地圖」才展開。展開後固定在頁籤下方，滑卡片時看得到地圖移動；想改成展開後跟著頁面捲走，把 `index.html` 的 `STICKY_MAP` 改成 `false`。點「附近有趣的地方」時，地圖收著會自動展開。電腦版地圖一直顯示在右邊 |
+
+## 義大利移民與咖啡文化（2026-11-09 新增）
+
+- D2 義大利餐分享餐：「🇮🇹 義大利移民與墨爾本」卡片，附「🇮🇹 義大利街區」：Lygon Street 小義大利、Fitzroy
+- D2 女王市場：「🇮🇹 義大利熟食天堂：Deli Hall」卡片
+- D2 聖派翠克大教堂附近：Pellegrini's Espresso Bar（1954 年的老義式咖啡吧）
+- D5 咖啡巷弄 Degraves St：「☕ 墨爾本為什麼是咖啡之都」卡片（義大利移民、Gaggia 拉桿咖啡機、Flat White、精品咖啡）
+- 「最早的義式咖啡機」各家說法不一（Lygon St 的 University Cafe、Bourke St 的 Pellegrini's），網頁都寫成「據說」
 
 ## 天氣資料
 
@@ -42,7 +53,8 @@
 ## 8-bit 像素場景
 
 - 檔案：`pixel/scenes.js`。用程式在 160×90 畫布上畫的**原創**像素插畫，沒有授權問題；網頁放大成馬賽克顆粒感，每秒 12 格循環播放。
-- 目前 18 個場景：
+- 目前 19 個場景：
+  - 重點店家：`chemist-warehouse`（紅黃招牌、滿滿貨架、閃爍價格牌、提著購物籃的小人）
   - D1：`plane-meal`（夜間機艙：吃飛機餐、戴眼罩睡覺冒 Zzz、空服員推餐車）、`arrival`（抵達大廳 WELCOME TO MELBOURNE：推行李推車、沒睡好的小人、打哈欠）
   - D2：`meal-pasta`（義大利分享餐）、`st-patricks`（聖派翠克大教堂）、`queen-vic-market`（女王市場）、`market-lane`（Market Lane Coffee 紅磚老建築轉角店＋門口喝咖啡的小人）、`cooks-cottage`（費茲洛花園 庫克船長小屋）、`meal-knuckle`（德國豬腳＋啤酒）
   - D2 附近景點（放在「附近有趣的地方」卡片裡）：`parliament`（議會大廈：柱廊、國旗、經過的電車）、`princess-theatre`（公主劇院：跑馬燈招牌）、`chinatown`（唐人街：牌樓、紅燈籠）
@@ -117,6 +129,8 @@
   - `drive`：從上一站過來的車程，例如 `'約 95 公里・1 小時 20 分'`
   - `flight`：`'out'`（去程）或 `'back'`（回程），對應 `DEFAULT_FLIGHTS`／使用者修改後的 `FL`；與航班時間有關的 `time`／`short`／`tips` 用 getter 寫，畫面渲染時才讀最新航班
   - `products`：採買商品代號陣列，對應 `PRODUCTS`
+  - `star`：`true` 時標示為「⭐ 重點店家」，地圖地標改成 ⭐
+  - `optional`：`true` 時標示為「🌅 早起選配」，不編號、不連進當天路線，地圖地標是 ☕
   - `extra`：自訂資訊卡 `[{title, items, note}]`，顯示在「介紹」下面（例如蒸汽火車的「🪑 座位攻略」）
   - `gq`：Google 地圖搜尋字串（英文名稱＋地址較準），例如 `'Sovereign Hill Ballarat'`；沒有就不顯示按鈕。`near` 裡的附近景點也可以加 `gq`
   - `name`、`en`、`short`、`intro`
@@ -127,6 +141,10 @@
 - `wx`：當日天氣設定，`loc` 對應 `data/climate.js` 的地點（`mel`／`pi`／`dandenong`／`ballarat`）、`evening` 夜間時段的地點（D3 用 `pi`）、`notes` 額外提醒
 - `OAKWOOD`：飯店資料，D2～D5 共用；各天用 `{...OAKWOOD, time:'20:15 入住'}` 加上當天時間
 - `PRODUCTS`：六項採買焦點（Market Lane、ST. ALi、AFL 隊帽、遊戲卡牌、美麗諾羊毛衛生衣、Chemist Warehouse），欄位有名稱、說明、價格 `[標籤, AUD 低, AUD 高]`（單一價格時低＝高）、購買地點、`tips`（⚠️ 購買注意，商品卡片與採買清單都會顯示）
+- `ORDER_CATS`：PDF 的三大分類（嬰幼護理與防蚊／手足修護與身體清潔／唇部護理、疤痕凝膠與零食）；`PRODUCT_ORDER`：小抄採買清單的順序（藥局在前，運動、卡牌在後）。D4、D5 的採買卡片也依此排序
+- `PRODUCTS` 可有 `img`／`src`／`url`（單張）或 `pimgs`（多張，每張有品名、來源、連結）：Chemist Warehouse 的魚油／兒童 DHA／木瓜霜（Chemist Warehouse 商品頁）、美麗諾（PChome 示意圖）、AFL 隊帽（New Era 澳洲官網）有圖；Market Lane、Frank Green 官網限流，暫時只有連結。新增 `frankgreen`（Frank Green 潮流保溫杯，手冊推薦，放在 D4 Chadstone 購物焦點）
+- `ORDER` 每項可有 `img`（商品圖路徑）、`src`（圖片來源名稱）、`url`（來源頁，也是「看商品圖」連結）
+- `ORDER`／`ORDER_STORES`／`ORDER_NOTES`：精選採購清單（依「澳洲精選採購清單.pdf」），`store` 是在哪裡買（pharmacy／aesop／jurlique／super）。行程項目加 `order:'pharmacy'` 等，卡片就會列出該店要買的品項（打勾與小抄同步，存在 `mel_bought`）
 - `nearTitle`：自訂「附近有趣的地方」標題（例如美麗諾採買卡用「🏬 門市」）
 - `timeNote`：當天的時間說明（目前只有 D2）
 - 每天標題旁顯示當地日期與星期（依出發日期推算）。項目可加 `closed:{days:[星期], msg}`（0＝日），那天剛好休市就顯示紅色警告：目前女王市場（週一、三）、Market Lane Collins St 店（週六、日）
@@ -158,6 +176,9 @@
 - **The AFL Store**：查不到墨爾本市區門市資料，改推 Rebel 旗艦店（Emporium Melbourne 4 樓）。
 - **ST. ALi 總店**（12-18 Yarra Pl, South Melbourne）：手冊建議 D3 午餐前後順路，但不在正式時間表內，卡片標「視時間」。
 - Chadstone 各店樓層未查證，卡片註明以商場地圖為準。
+- **精選採購清單（代購，2026-11-09 新增）**：D4 Chadstone 一次買齊——Chemist Warehouse（藥局品項 10 項 17 件）、Aesop（Ground Level，洗手乳）、Myer／David Jones 的 Jurlique 專櫃（護手霜 11 支；專櫃常見 40ml，30ml 多在禮盒組）、Coles／Woolworths（零食）。D5 Melbourne Central Chemist Warehouse 可補買。
+  - **商品圖**（使用者決定使用，2026-11-09）：`images/products/oXX.jpg`，縮成寬 600px。取自 Chemist Warehouse 商品頁（10 項藥局品）、PChome 24h（Aesop、Jumpys）、Pak'nSave（Grain Waves），每項標註來源並附「🔍 看商品圖」連到來源頁；點縮圖開大圖彈窗。僅供辨識包裝、非商業使用。Jurlique 官網限流抓不到，先連 Google 圖片搜尋。
+  - 查證差異：DU'IT Tough Hands 在 Chemist Warehouse 是 150g（清單寫 155g）；Dermatix 要拿 Ultra Silicone Gel，別拿到普通版 Scar Reduction Gel。
 - **美麗諾羊毛衛生衣（代買，2026-11-09 新增）**：D4 Chadstone 的 Icebreaker（品牌官網資料 Shop B-306，舊資料寫 Shop 324）與 Macpac（Lower Ground）、D5 市區 Kathmandu（門市資料不夠新，出發前查官網）。三家都是紐西蘭品牌；價格 AUD 70–120 為網路零售參考價。
 - **Chemist Warehouse**（2026-10-19 依使用者要求新增，不在兩份原始資料內）：
   - D4 Chadstone 店、D5 Melbourne Central 店（LG 50, 300 Lonsdale St）的地址來自澳洲政府 healthdirect 醫療服務名錄；Bourke St 345 號 London Stores 店只有店家目錄資料，只寫在備註裡，沒有標在地圖上。

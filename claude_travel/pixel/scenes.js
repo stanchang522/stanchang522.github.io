@@ -752,6 +752,46 @@
     if(len >= 24) [[94, 48], [114, 50]].forEach(([x, y]) => { R(c, x, y, 1, 3, '#fff6cf'); R(c, x - 1, y + 1, 3, 1, '#fff6cf'); });
   }
 
+  /* ---------- 重點店家：Chemist Warehouse（紅黃招牌、提著滿滿購物籃的小人） ---------- */
+  function chemistWarehouse(c, t){
+    bands(c, ['#8fd0f2', '#b4e1f7', '#d6effa'], 0, 30);
+    cloud(c, ((t * 3) % 200) - 30, 4);
+    R(c, 0, 14, W, 60, '#e9e4da');                                            // 建築立面
+    // 紅色招牌＋黃字（偶爾閃一下）
+    const glow = Math.floor(t * 2) % 6 === 0;
+    R(c, 6, 16, 148, 13, '#d71920'); R(c, 6, 28, 148, 2, '#a5121a');
+    const sign = 'CHEMIST WAREHOUSE'; text(c, sign, 80 - Math.floor(textW(sign) / 2), 20, glow ? '#ffffff' : '#ffd400');
+    // 大片玻璃窗：貨架上滿滿的商品、黃色價格牌
+    R(c, 8, 32, 144, 38, '#3a3f47');
+    R(c, 10, 34, 140, 34, '#f5f1e6');
+    const goods = ['#e63946', '#2a9d8f', '#ffb703', '#457b9d', '#ff8fab', '#ffffff', '#8338ec', '#6abf4b'];
+    for(let row = 0; row < 3; row++){
+      const y = 37 + row * 10;
+      R(c, 10, y + 7, 140, 1, '#b8ad96');
+      for(let x = 12; x < 148; x += 4) R(c, x, y + 2 + (x % 3), 3, 5 - (x % 3), goods[(x * 7 + row * 3) % goods.length]);
+    }
+    for(let k = 0; k < 6; k++){                                                  // 價格牌輪流閃
+      const x = 16 + k * 24, on = (Math.floor(t * 3) + k) % 3 === 0;
+      R(c, x, 34 + (k % 2) * 10, 8, 5, on ? '#ffd400' : '#ffe680'); R(c, x + 1, 35 + (k % 2) * 10, 6, 1, '#d71920'); R(c, x + 2, 37 + (k % 2) * 10, 4, 1, '#d71920');
+    }
+    R(c, 66, 46, 28, 24, '#3a3f47'); R(c, 68, 48, 24, 22, '#cfe6f2'); R(c, 79, 48, 2, 22, '#3a3f47');   // 自動門
+    R(c, 0, 70, W, 20, '#cfc9be'); for(let x = 0; x < W; x += 10) R(c, x, 70, 1, 20, '#bcb5a8');
+    // 提著購物籃、購物袋進出的小人
+    const shoppers = [
+      { p: { hair: '#3b2416', shirt: '#2a9d8f' }, sp: 9, off: 0, dir: 1, bag: '#d71920' },
+      { p: { hair: '#d9a441', shirt: '#e76f51' }, sp: 7, off: 90, dir: -1, bag: '#ffd400' },
+      { p: { hair: '#111', shirt: '#6d597a' }, sp: 8, off: 170, dir: 1, bag: '#d71920' }
+    ];
+    shoppers.forEach((s, k) => {
+      let x = ((t * s.sp + s.off) % 210) - 25; if(s.dir < 0) x = 160 - x;
+      const bob = Math.floor(t * 6 + k) % 2;
+      chibi(c, x, 62, s.p, false, bob, 2);
+      const bx = s.dir > 0 ? x + 15 : x - 9;                                      // 滿滿的購物籃
+      R(c, bx, 76 + bob, 10, 7, s.bag); R(c, bx + 1, 74 + bob, 8, 2, s.bag === '#d71920' ? '#a5121a' : '#c9a400');
+      for(let j = 0; j < 4; j++) R(c, bx + 1 + j * 2, 72 + bob - (j % 2), 2, 3, goods[(j + k * 2) % goods.length]);
+    });
+  }
+
   window.PIXEL_SCENES = {
     'brighton-boxes': { name: 'Brighton 七彩沙灘屋', draw: brighton },
     'penguin-parade': { name: '神仙小企鵝夜歸巢', draw: penguins },
@@ -766,6 +806,7 @@
     'plane-meal':     { name: '飛機餐', draw: planeMeal },
     'arrival':        { name: '抵達墨爾本', draw: arrival },
     'bbq':            { name: '澳洲 BBQ', draw: bbq },
+    'chemist-warehouse': { name: 'Chemist Warehouse', draw: chemistWarehouse },
     'photo-booth':    { name: 'Flinders St 復古拍貼機', draw: photoBooth },
     'gp-circuit':     { name: '菲利普島 GP 賽車場', draw: gpCircuit },
     'meal-steak':     { name: 'Meat & Wine Co. 牛排', draw: restaurant({ night: false, flags: ['#8b5a3c', '#d4a017', '#5a3a22'], cloth: ['#6b4426', '#7d5230'], cups: ['wine', 'beer'], dish: steak }) },

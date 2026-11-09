@@ -127,6 +127,8 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .colhead .time{font-size:11.5px;font-weight:700;color:var(--navy);background:#eef2f7;border-radius:6px;padding:0 6px;margin-left:4px}
 .colhead h3{margin:4px 0 0;font-size:17px;line-height:1.35}
 .colhead .en{font-size:12px;color:var(--muted)}
+.col{min-width:0}
+.colhead .scdrive{white-space:normal}
 .cardx{background:var(--surface);border-radius:12px;padding:10px 12px;box-shadow:0 1px 2px rgba(0,0,0,.08);font-size:13.5px}
 .cardx h4{margin:0 0 4px;font-size:13px;color:var(--navy)}
 .cardx ul{margin:0;padding-left:18px}
@@ -155,6 +157,52 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .ptips ul{margin:2px 0 0;padding-left:16px}
 .ptips li{margin:2px 0}
 .ptips-row{margin-top:3px;color:#9d174d}
+.order{background:#f0f7f4;border:1px solid #cfe5da;border-radius:12px;padding:9px 10px;font-size:13px}
+.col > .order{box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.ohead{font-weight:700;color:#1f6b4f;margin-bottom:4px}
+.orow{display:flex;gap:6px;align-items:flex-start;padding:5px 0;border-top:1px dashed #cfe5da;cursor:pointer}
+.orow:first-of-type{border-top:0}
+.orow input{margin-top:3px}
+.othumb{flex:0 0 52px;width:52px;height:52px;object-fit:contain;background:#fff;border:1px solid #d6e9df;border-radius:8px;cursor:zoom-in}
+.othumb.none{display:flex;align-items:center;justify-content:center;font-size:10.5px;color:var(--muted);cursor:default}
+.osrc{margin-top:1px}
+.pimg{display:flex;gap:8px;align-items:center;margin:4px 0}
+.pimgs{display:flex;gap:8px;margin:6px 0 2px}
+.pimgs figure{margin:0;flex:1;min-width:0;text-align:center}
+.pimgs .othumb{width:100%;height:64px}
+.pimgs figcaption{font-size:11px;color:#4b5563;line-height:1.35;margin-top:2px}
+.pimgs a{color:#1a73e8;font-weight:600;text-decoration:none}
+.pimg .osrc{font-size:11.5px;color:#6b7280}
+.osrc a{color:#1a73e8;font-weight:600;text-decoration:none}
+#lightbox{position:fixed;inset:0;z-index:5000;background:rgba(15,20,30,.88);display:flex;align-items:center;justify-content:center;padding:20px}
+#lightbox[hidden]{display:none}
+#lightbox figure{margin:0;max-width:min(92vw,520px);text-align:center}
+#lightbox img{max-width:100%;max-height:70vh;background:#fff;border-radius:12px;padding:10px;box-sizing:border-box}
+#lightbox figcaption{color:#fff;font-size:13.5px;margin-top:10px;line-height:1.5}
+#lightbox figcaption small{color:#cbd5e1;font-size:11.5px}
+#lightbox figcaption a{color:#9cc8ff}
+.lbx{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.15);color:#fff;font-size:20px;cursor:pointer}
+.oqty{display:inline-block;font-weight:700;color:#fff;background:#2a9d8f;border-radius:6px;padding:0 5px;font-size:12px}
+.otxt{font-size:13px;line-height:1.45}
+.otxt b{color:var(--navy)}
+.ospec{font-weight:700;color:#9d174d}
+.otxt small{display:block;color:#6b7280;font-size:11.5px}
+.orow.got .otxt{text-decoration:line-through;color:var(--muted)}
+.onote{margin-top:6px;font-size:12px;color:#4b5563}
+.ogroup{padding:6px 0 8px;border-top:1px solid var(--line)}
+.ogroup:first-child{border-top:0}
+.ogname{font-weight:700;font-size:13.5px;color:var(--navy);display:flex;justify-content:space-between;gap:6px;margin-bottom:2px}
+.ogn{font-size:11.5px;color:var(--muted);font-weight:500;white-space:nowrap}
+.ostore{display:inline-block;font-size:11px;font-weight:700;color:#334155;background:#eef2f7;border-radius:6px;padding:0 5px}
+.owhere{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);font-size:12px;color:#4b5563;line-height:1.6}
+.ogwhere{font-size:11.5px;color:var(--muted);margin-bottom:2px}
+.opt{font-size:10.5px;font-weight:700;color:#7a3e00;background:#ffd8a8;border-radius:999px;padding:0 7px;margin-left:5px;white-space:nowrap}
+.col:has(.opt) .colhead{border-top-style:dashed}
+.star{font-size:10.5px;font-weight:700;color:#7a4b00;background:#ffe27a;border-radius:999px;padding:0 7px;margin-left:5px;white-space:nowrap}
+.cheat .focus{background:#fff8e1;border:2px solid #ffd400}
+.focus h3{color:#a5121a}
+.focus h4{margin:8px 0 2px;font-size:13px;color:var(--navy)}
+.fsub{font-size:13px;margin:0 0 4px;color:#4b5563}
 .exnote{font-size:11.5px;color:var(--muted);margin-top:4px !important}
 .cardx.notecard{background:#fff8ef;color:#9a6a2f;font-size:12.5px}
 .col .prod{margin:0;box-shadow:0 1px 2px rgba(0,0,0,.08)}
@@ -245,11 +293,12 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- 景點圖片清單：images/images.js（換圖說明見 README） -->
-<script src="images/images.js"></script>
+<script src="images/images.js?v=20261109d"></script>
 <!-- 各地點歷年 10、11 月平均：data/climate.js（由 tools/build_climate.py 產生） -->
-<script src="data/climate.js"></script>
+<script src="data/climate.js?v=20261109d"></script>
 <!-- 8-bit 像素場景：pixel/scenes.js（原創，以程式繪製） -->
-<script src="pixel/scenes.js"></script>
+<!-- 發佈時更新 ?v= 版本號，避免手機瀏覽器用到快取的舊檔 -->
+<script src="pixel/scenes.js?v=20261109d"></script>
 <script>
 /* ============ 行程資料 ============ */
 const TYPE = {
@@ -260,9 +309,76 @@ const TYPE = {
   shop:{label:'採買',color:'var(--shop)',hex:'#db2777'}
 };
 
+/* 精選採購清單（代購，依「澳洲精選採購清單.pdf」：13 項、34 件）。store＝在哪裡買，同一項不同香味／口味拆成多行 */
+// PDF 的三大分類（項次依 PDF 順序）
+const ORDER_CATS = [
+  {title:'一、嬰幼護理與防蚊專區',             ids:['o01','o02','o11','o12','o13']},
+  {title:'二、手足修護與身體清潔保養',         ids:['o03a','o03b','o03c','o05','o08','o10']},
+  {title:'三、唇部護理、疤痕凝膠與澳洲零食',   ids:['o07a','o07b','o09','o04','o06']}
+];
+const ORDER_STORES = {
+  pharmacy:{name:'💊 藥局（Chemist Warehouse）', tag:'💊 藥局', where:'D4 Chadstone 店；D5 Melbourne Central 店可補買'},
+  aesop:   {name:'🧴 Aesop 門市', tag:'🧴 Aesop', where:'D4 Chadstone（Ground Level）'},
+  jurlique:{name:'🌸 Jurlique（Myer／David Jones 百貨專櫃）', tag:'🌸 Jurlique 專櫃', where:'D4 Chadstone 百貨專櫃；買不齊可在 D6 墨爾本機場免稅店找找'},
+  super:   {name:'🛒 超市（Coles／Woolworths）', tag:'🛒 超市', where:'D4 Chadstone 超市；市區、飯店附近超市也有'}
+};
+const ORDER = [
+  {id:'o01', img:'images/products/o01.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/31906',  no:'01', store:'pharmacy', brand:'Aerogard',       name:'樂澳家防蚊液 Odourless Insect Repellent', spec:'135ml', qty:4, note:'超市也有賣。如果是噴霧罐（aerosol），航空公司可能不收，結帳前看清楚或問華航'},
+  {id:'o02', img:'images/products/o02.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/144859',  no:'02', store:'pharmacy', brand:'BioGaia',        name:'乖寶亞益生菌滴劑 Protectis Baby Probiotic Drops', spec:'5ml', qty:4, note:'另有「加維生素 D」的版本，依清單圖片確認包裝'},
+  {id:'o11', img:'images/products/o11.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73115',  no:'11', store:'pharmacy', brand:'Ego QV',         name:'小老虎嬰兒乳霜 QV Baby Moisturising Cream', spec:'250ml', qty:1, note:'認明瓶身小老虎圖樣與 250ml 容量'},
+  {id:'o12', img:'images/products/o12.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/120429',  no:'12', store:'pharmacy', brand:'Ego QV',         name:'三重神經醯胺乳液 QV Ceramides Moisturising Lotion', spec:'350ml', qty:1},
+  {id:'o13', img:'images/products/o13.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/4022',  no:'13', store:'pharmacy', brand:'Ego QV',         name:'舒敏加護乳霜 QV Cream for Sensitive Skin', spec:'100g', qty:1},
+  {id:'o05', img:'images/products/o05.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/85488',  no:'05', store:'pharmacy', brand:'Dermal Therapy', name:'足部修護霜 Heel Magic', spec:'70g', qty:1},
+  {id:'o07a', img:'images/products/o07a.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/86416', no:'07', store:'pharmacy', brand:'Dermal Therapy', name:'原味護唇膏 Lip Balm Original', spec:'10g', qty:2},
+  {id:'o07b', img:'images/products/o07b.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/146233', no:'07', store:'pharmacy', brand:'Dermal Therapy', name:'潤色櫻桃色護唇膏 Tinted Lip Balm Cherry Red', spec:'8g', qty:1},
+  {id:'o08', img:'images/products/o08.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73481',  no:'08', store:'pharmacy', brand:"DU'IT",          name:'強效護手霜 Tough Hands Intensive Skin Repair', spec:'155g', qty:1, note:'拿標準大容量規格。Chemist Warehouse 賣的是 150g（清單寫 155g，可能是誤植），包裝見圖'},
+  {id:'o09', img:'images/products/o09.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/93781',  no:'09', store:'pharmacy', brand:'Dermatix Ultra', name:'倍舒痕凝膠 Advanced Scar Formula', spec:'15g', qty:1, note:'藥局專櫃的疤痕修護凝膠。Chemist Warehouse 品名是 Dermatix Ultra Silicone Gel 15g；另有一款普通版 Scar Reduction Gel，別拿錯'},
+  {id:'o10', img:'images/products/o10.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DDCCB6-A900JXEQ1',  no:'10', store:'aesop',    brand:'Aesop',          name:'洗手乳 Aromatique Hand Wash', spec:'500ml', qty:1, note:'琥珀色按壓瓶'},
+  {id:'o03a', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Jasmine+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 茉莉 Jasmine', spec:'30ml', qty:6},
+  {id:'o03b', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Lavender+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 薰衣草 Lavender', spec:'30ml', qty:4},
+  {id:'o03c', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Rose+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 玫瑰 Rose', spec:'30ml', qty:1},
+  {id:'o04', img:'images/products/o04.jpg', src:'Pak\'nSave（紐西蘭超市）', url:'https://www.paknsave.co.nz/shop/product/5345103_ea_000pns',  no:'04', store:'super',    brand:'Sunbites',       name:'穀物波浪餅乾 Grain Waves Minis', spec:'150g', qty:2, note:'條裝分享包'},
+  {id:'o06', img:'images/products/o06.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DBAEFS-A900AY900',  no:'06', store:'super',    brand:'Jumpys',         name:'袋鼠餅乾大包裝 Crunchy Potato Snacks 10 Pack', spec:'180g', qty:3, note:'要大包裝（10 小包）'}
+];
+const ORDER_NOTES = {
+  pharmacy:['乳液、乳霜等液狀膏狀商品放托運行李','Chemist Warehouse 價格常變動，熱門品項可能限購'],
+  aesop:['500ml 洗手乳是液體，記得放托運行李'],
+  jurlique:['專櫃常見的是 40ml，30ml 小支多半在禮盒組裡；尺寸不同先問代購的人可不可以換','買不齊可以在 D6 墨爾本機場免稅店找找'],
+  super:['餅乾體積大，可以裝在行李箱的空隙']
+};
+const ORDER_TOTAL = ORDER.reduce((n, o) => n + o.qty, 0);
+// 採買焦點在小抄的排列順序：藥局在前，運動、卡牌在後
+const PRODUCT_ORDER = ['chemist', 'merino', 'marketlane', 'stali', 'frankgreen', 'afl', 'tcg'];
+function orderRow(o, showStore){
+  const cap = `${o.brand} ${o.name} ${o.spec}`;
+  return `<label class="orow ${bought[o.id]?'got':''}"><input type="checkbox" data-buy="${o.id}" ${bought[o.id]?'checked':''}>
+    ${o.img ? `<img class="othumb" src="${o.img}" alt="${esc(cap)}" loading="lazy" data-zoom="${o.img}" data-cap="${esc(cap)}" data-src="${esc(o.src)}" data-url="${esc(o.url)}">` : '<span class="othumb none">無圖</span>'}
+    <span class="otxt">${showStore?`<span class="ostore">${ORDER_STORES[o.store].tag}</span> `:''}<span class="oqty">×${o.qty}</span> <b>#${o.no} ${esc(o.brand)}</b> ${esc(o.name)} <span class="ospec">${esc(o.spec)}</span>
+    ${o.note?`<small>${esc(o.note)}</small>`:''}
+    <small class="osrc"><a href="${esc(o.url)}" target="_blank" rel="noopener">🔍 看商品圖</a>${o.src?` · 圖片來源：${esc(o.src)}`:' · Google 圖片搜尋'}</small></span></label>`;
+}
+// 行程卡片：這家店要買的精選採購品項
+function orderHTML(store){
+  const list = ORDER.filter(o => o.store === store); if(!list.length) return '';
+  const n = list.reduce((a, o) => a + o.qty, 0);
+  return `<div class="order"><div class="ohead">📦 精選採購清單：這裡要買 ${list.length} 項、${n} 件</div>${list.map(orderRow).join('')}
+    ${(ORDER_NOTES[store]||[]).length?`<div class="onote">💡 ${ORDER_NOTES[store].map(esc).join('<br>💡 ')}</div>`:''}</div>`;
+}
+// 小抄：完整的精選採購清單（依店家分組）
+function renderOrderRows(){
+  const el = document.getElementById('orderRows'); if(!el) return;
+  const byId = Object.fromEntries(ORDER.map(o => [o.id, o]));
+  el.innerHTML = ORDER_CATS.map(c => { const list = c.ids.map(id => byId[id]);
+      return `<div class="ogroup"><div class="ogname">${c.title}<span class="ogn">${list.reduce((n, o) => n + o.qty, 0)} 件</span></div>
+      ${list.map(o => orderRow(o, true)).join('')}</div>`; }).join('')
+    + `<div class="owhere"><b>📍 在哪裡買</b>${Object.values(ORDER_STORES).map(st => `<div>${st.tag}：${esc(st.where)}</div>`).join('')}</div>`;
+  const got = ORDER.filter(o => bought[o.id]).reduce((n, o) => n + o.qty, 0);
+  document.getElementById('orderCount').textContent = `已買 ${got} / ${ORDER_TOTAL} 件`;
+}
+
 /* 採買焦點（整理自行程手冊；價格、店點出發前請再確認） */
 const PRODUCTS = {
-  marketlane:{name:'Market Lane Coffee 隨行杯／保溫杯',
+  marketlane:{name:'Market Lane Coffee 隨行杯／保溫杯', src:'', url:'https://marketlane.com.au/collections/equipment',
     desc:'墨爾本精品咖啡代表品牌，極簡白色設計，常與 KINTO、Frank Green 聯名；也可以順便買新鮮烘焙的咖啡豆。',
     prices:[['聯名保溫杯／隨行杯',45,65]],
     where:['D2 女王市場店：462 Queen St（市場 Mercat Cross 建築）','D5 Collins St 店：8 Collins St（平日 7:00–17:00，週末公休）']},
@@ -270,7 +386,7 @@ const PRODUCTS = {
     desc:'墨爾本精品咖啡潮流代表，經典眼罩天使 Logo，常與 KeepCup、Frank Green 聯名推出雙層杯。',
     prices:[['聯名隨行保溫杯',35,55]],
     where:['D3 South Melbourne 總店：12-18 Yarra Pl（距 Southbank 車程約 5–8 分鐘）']},
-  afl:{name:'AFL 澳式足球隊帽',
+  afl:{name:'AFL 澳式足球隊帽', img:'images/products/p-afl.jpg', src:'New Era 澳洲官網（Melbourne Demons 9FORTY）', url:'https://www.neweracap.com.au/products/melbourne-demons-black-on-black-9forty-snapback',
     desc:'最推薦 New Era 9FORTY 彎簷刺繡老爹帽，Melbourne Demons、Collingwood 兩隊最熱門。',
     prices:[['New Era 刺繡款',35,45],['一般球隊款',25,35],['特價款',20,30]],
     where:['D4 Chadstone 運動用品店（如 Rebel）','D5 Rebel 旗艦店：Emporium Melbourne 4 樓']},
@@ -278,7 +394,11 @@ const PRODUCTS = {
     desc:'在大型連鎖通路以官方定價販售，不用擔心被炒價。',
     prices:[['補充包（每包）',6,8],['菁英盒／特典禮盒',85,100]],
     where:['D4 Chadstone：Kmart、Target、JB Hi-Fi、EB Games','D5 Target（222 Bourke St）、EB Games（Melbourne Central）']},
-  merino:{name:'美麗諾羊毛衛生衣（代買）',
+  frankgreen:{name:'Frank Green 潮流保溫杯', src:'', url:'https://www.google.com/search?tbm=isch&q=Frank+Green+reusable+cup',
+    desc:'澳洲的隨行杯／保溫瓶品牌，杯身、杯蓋顏色可以自由搭配，按壓式杯蓋是特色。手冊推薦在 Chadstone 逛專櫃或生活選品店。',
+    prices:[['保溫杯／隨行瓶（手冊參考價）',45,60]],
+    where:['D4 Chadstone：專櫃或生活選品店（手冊資料，位置以商場地圖為準）']},
+  merino:{name:'美麗諾羊毛衛生衣（代買）', img:'images/products/p-merino.jpg', src:'PChome 24h（紐西蘭 Oasis 200 美麗諾長袖，示意圖）', url:'https://24h.pchome.com.tw/prod/DEBLWO-A900BXQNS',
     desc:'Merino Wool Base Layer（衛生衣／發熱衣）。Icebreaker、Macpac、Kathmandu 都是紐西蘭品牌；如果對方指定「澳洲牌」，可以找 XTM（用澳洲美麗諾羊毛）。',
     prices:[['品牌衛生衣（每件，網路零售參考價）',70,120]],
     where:['D4 Chadstone：Icebreaker（官網門市資料 Shop B-306）、Macpac（Lower Ground 樓層）','D5 市區：Kathmandu（Emporium 等門市，出發前查官網）'],
@@ -289,6 +409,10 @@ const PRODUCTS = {
           '尺寸：歐美版型通常偏大，先問好對方身高體重，或拍下店內尺寸表確認',
           '同一家店買滿 AUD 300 可退稅，請店員開 Tax Invoice']},
   chemist:{name:'Chemist Warehouse 藥妝保健品',
+    pimgs:[
+      {img:'images/products/p-fishoil.jpg', cap:'Blackmores 魚油 1000mg 400 顆', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/50010'},
+      {img:'images/products/p-dha.jpg',     cap:'Bio Island 兒童 DHA 60 顆',    src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/75441'},
+      {img:'images/products/p-papaw.jpg',   cap:'Lucas 木瓜霜 75g',             src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/31207'}],
     desc:'澳洲最大的平價藥妝連鎖（紅黃招牌），保健食品、保養品常比一般藥局便宜。Swisse 等品牌常有折扣，價格以店內標價為準。以下是官網或比價網的參考價，常有半價特價。',
     prices:[['Blackmores 魚油 1000mg 400 顆（官網參考價）',48.99,48.99],['Bio Island 兒童 DHA 60 顆（官網 2025/1 參考價）',26.99,26.99],['Lucas 木瓜霜 75g（比價網 2026/8 最低價）',13.83,13.83]],
     where:['D4 Chadstone 購物中心內（1341 Dandenong Rd）','D5 Melbourne Central 地下樓層 LG 50（300 Lonsdale St）','D5 另一家：Bourke St 345 號 London Stores 2 樓（店家目錄資料，出發前請確認）']}
@@ -310,6 +434,23 @@ const OAKWOOD = {
 const IMG = window.IMAGES || {};
 function photo(key){ const p = IMG[key]; return p ? {src:'images/'+p.file, ...p} : null; }
 const MEL = [-37.6690,144.8410], TPE = [25.0797,121.2342];
+// 早起選配：Patricia Coffee Brewers（平日 7:00–16:00，週末公休）。D3、D4 共用，各天用 {...PATRICIA} 帶入
+const PATRICIA = {
+  type:'meal', optional:true, name:'☕ Patricia Coffee Brewers', gq:'Patricia Coffee Brewers Melbourne',
+  en:'493-495 Little Bourke St（Little William St 轉角）', ll:[-37.8136,144.9593],
+  time:'07:00–07:45（早起選配）',
+  drive:'從飯店步行約 25 分鐘（約 2 公里），趕時間可叫 Uber 約 5–10 分鐘',
+  short:'墨爾本最有名的站立式咖啡吧之一，上班族早晨排隊的名店。行程 08:30 出發前去喝一杯。',
+  intro:'Patricia 是墨爾本咖啡迷必訪的小店，隱身在 Little Bourke St 和 Little William St 的轉角，店內沒有座位，大家站著喝完就走，早上常排著附近的上班族。菜單很簡單，選黑咖啡、加奶咖啡或手沖就好。',
+  see:['站著喝咖啡的在地上班族日常','轉角小店的牆面與店招，拍照很有味道'],
+  buy:['☕ 加奶咖啡（White，可選 Flat White）或黑咖啡（Black）','想喝手沖可以點 Filter'],
+  tips:['只有平日 7:00–16:00 營業，週末公休','最晚 08:15 回到飯店集合，來回預留 1 小時以上','團體行程中屬於自費、自由參加，出發前告知領隊','早上人多，點完在旁邊等，喝完把杯子放回櫃台'],
+  closed:{days:[0,6],msg:'Patricia 週末公休，這天去不了'},
+  near:[
+    {name:'Hardware Lane',gq:'Hardware Lane Melbourne',ll:[-37.8130,144.9608],desc:'紅磚步道小巷，就在附近，早上很安靜好拍。'},
+    {name:'維多利亞女王市場',gq:'Queen Victoria Market',ll:[-37.8076,144.9568],desc:'步行約 8 分鐘；週一、週三白天休市，週四、週五早上 6 點左右就開始營業。'}
+  ]
+};
 
 const DAYS = [
 {
@@ -341,7 +482,16 @@ const DAYS = [
      see:[],buy:['機場出口有電信櫃台可買 SIM 卡（Telstra 訊號覆蓋最廣，郊區景點也比較穩）'],
      tips:['出關後把手錶調成當地時間','可先在機場 ATM 或換匯處準備少量澳幣現金'],near:[]},
     {type:'meal',name:'午餐：義大利餐分享餐',px:'meal-pasta',time:'14:00–15:00',drive:'進市區約 25 公里・35–45 分鐘',ll:null,short:'旅行社未公布店家。',
-     note:'墨爾本的義大利菜水準很高（二戰後有大量義大利移民），Lygon Street 被稱為「小義大利」。'},
+     note:'墨爾本的義大利菜水準很高（二戰後有大量義大利移民），Lygon Street 被稱為「小義大利」。',
+     extra:[{title:'🇮🇹 義大利移民與墨爾本', items:[
+       '二戰後大批義大利移民來到墨爾本，帶來義式料理、熟食和咖啡館文化，是墨爾本成為「咖啡之都」的關鍵（咖啡的故事見 D5 咖啡巷弄）',
+       'Lygon Street（Carlton 區）被稱為「小義大利」：義式冰淇淋店、露天咖啡座、傳統披薩餐館林立，每年還有萊貢街義大利節（Lygon Street Festa）',
+       'Brunswick、Fitzroy 是早期義大利勞工移民聚居的地方，現在成了文青、藝術家和精品咖啡店的聚集地，街角仍找得到經營數十年的義大利烘焙坊和雜貨店',
+       '維多利亞女王市場的 Deli Hall 有很多二戰後義大利移民家族傳承至今的熟食攤（下午就會去）']}],
+     nearTitle:'🇮🇹 義大利街區', near:[
+      {name:'Lygon Street 小義大利',gq:'Lygon Street Carlton',ll:[-37.7990,144.9668],desc:'墨爾本義大利文化的發源地，冰淇淋、披薩、露天咖啡座一整條街。距市中心約 2 公里，搭電車可到。'},
+      {name:'Fitzroy 菲茨羅伊區',gq:'Brunswick Street Fitzroy',ll:[-37.7990,144.9785],desc:'早期義大利移民聚落，現在是文青潮流街區，Brunswick St 上咖啡店、古著店林立。'}
+     ]},
     {type:'spot',img:'st-patricks', px:'st-patricks', time:'15:15–16:00', name:'聖派翠克大教堂',gq:'St Patrick\'s Cathedral Melbourne',en:"St Patrick's Cathedral",ll:[-37.8100,144.9762],
      short:'澳洲最大、最高的哥德式教堂之一，藍石外觀與彩繪玻璃非常壯觀。',
      intro:'聖派翠克大教堂是墨爾本天主教總教區的主教座堂，從 1858 年開始興建、前後花了約 80 年才完成。外牆是維多利亞省特產的深灰色藍石 (bluestone)，三座尖塔高聳，是哥德復興式建築的經典。',
@@ -349,6 +499,7 @@ const DAYS = [
      buy:[],
      tips:['教堂內請保持安靜、脫帽，彌撒進行時不要走動拍照','入內免費'],
      near:[
+      {name:'Pellegrini\'s Espresso Bar',gq:'Pellegrini\'s Espresso Bar Melbourne',ll:[-37.8114,144.9711],desc:'1954 年開業的老義式咖啡吧（66 Bourke St），據說是墨爾本最早使用義式咖啡機的咖啡館之一，紅白格子吧台很有老味道。'},
       {name:'維多利亞議會大廈',px:'parliament',gq:'Parliament House Melbourne',ll:[-37.8110,144.9737],desc:'19 世紀的古典建築，台階前是熱門拍照點，平日有免費導覽。'},
       {name:'公主劇院',px:'princess-theatre',gq:'Princess Theatre Melbourne',ll:[-37.8105,144.9727],desc:'1886 年開幕的老劇院，長年上演百老匯音樂劇。'},
       {name:'唐人街 Little Bourke St',px:'chinatown',gq:'Chinatown Melbourne',ll:[-37.8115,144.9680],desc:'西方世界最古老的唐人街之一，牌樓與中式餐館林立。'}
@@ -357,6 +508,10 @@ const DAYS = [
      short:'南半球最大的露天市場，生鮮、熟食、紀念品一次逛齊。',
      intro:'維多利亞女王市場（當地人叫 Queen Vic Market）營業超過 140 年，佔地約 7 公頃。分成肉類海鮮館、熟食館 (Deli Hall，裝飾藝術風格建築)、蔬果區與一般商品區，是採買伴手禮和體驗在地生活的好地方。',
      see:['Deli Hall 熟食館：起司、火腿、橄欖琳瑯滿目','肉類海鮮館的生蠔攤','週末的街頭藝人表演'],
+     extra:[{title:'🇮🇹 義大利熟食天堂：Deli Hall', items:[
+       '市場裡有很多二戰後義大利移民家族傳承至今的攤位',
+       'Deli Hall（熟食館）擺滿義大利進口起司（例如 Parmigiano-Reggiano 帕馬森）、薩拉米香腸、橄欖和手工義大利麵，是墨爾本人採買義式食材的地方',
+       '起司、香腸等肉品、乳製品不能帶回台灣，在市場吃一點、拍照就好']}],
      buy:['🍩 American Doughnut Kitchen 的熱果醬甜甜圈（餐車排隊名物）','澳洲蜂蜜、Manuka 蜂蜜','綿羊油、木瓜霜 (Lucas Papaw) 等便宜伴手禮','UGG 雪靴、袋鼠玩偶、無尾熊造型紀念品','夏威夷豆 (Macadamia)'],
      tips:['市場週一、週三白天休市，記得確認營業日','逛一般商品區可以小小議價，買多件比較好談','中午人潮多，注意隨身財物'],
      note:'⚠️ 市場一般下午 3～4 點就收攤，依行程抵達時已近傍晚，攤位可能大多已打烊。想逛的話可以請領隊調整順序。',
@@ -388,6 +543,7 @@ const DAYS = [
   title:'Day 3　海灘、無尾熊、企鵝', tab:'D3', sub:'菲利普島',
   route:'Brighton 七彩沙灘屋 → Maru 無尾熊動物園 → 菲利普島企鵝歸巢', wx:{loc:'mel',evening:'pi',notes:['白天在市區與沿海移動；晚上企鵝看台在海邊，風大，體感比氣溫低','看台座位是水泥，可帶小坐墊或輕便雨衣']},
   items:[
+    {...PATRICIA},
     {type:'spot',img:'brighton-boxes', px:'brighton-boxes', time:'09:00–10:15', drive:'從市區約 13 公里・30 分鐘', name:'Brighton 七彩沙灘屋',gq:'Brighton Bathing Boxes',en:'Brighton Bathing Boxes',ll:[-37.9175,144.9866],
      short:'沙灘上一整排色彩繽紛的小木屋，墨爾本最上鏡的海灘。',
      intro:'位於 Dendy Street Beach 的 82 間彩色沙灘小屋，最早可追溯到 1860 年代，原本是維多利亞時期人們在海邊換泳衣的地方。現在每間都由私人擁有，造型各異，成交價甚至可達數十萬澳幣。',
@@ -442,6 +598,7 @@ const DAYS = [
   title:'Day 4　蒸汽火車、酒莊、購物', tab:'D4', sub:'丹頓農山',
   route:'普芬比利蒸汽火車 → 羅奇福德酒莊 → Chadstone 購物中心 → Docklands 晚餐', wx:{loc:'dandenong',notes:['山區比市區稍涼，森林裡較潮濕、下雨機率也較高','坐火車窗邊時風大，帶一件防風外套']},
   items:[
+    {...PATRICIA},
     {type:'spot',img:'puffing-billy', px:'puffing-billy', time:'09:45–11:15', drive:'約 45 公里・50–60 分鐘', name:'普芬比利蒸汽火車',gq:'Puffing Billy Railway Belgrave Station',en:'Puffing Billy Railway, Belgrave',ll:[-37.9093,145.3555],
      short:'百年蒸汽火車穿越丹頓農山雨林，坐在車窗上晃腳是經典畫面。',
      intro:'普芬比利蒸汽火車建於 1900 年代初期，是澳洲保存最完整的蒸汽鐵路之一。從 Belgrave 站出發，穿越高聳的山梣樹 (Mountain Ash) 雨林和木造棧橋，乘客可以坐在敞開的車窗邊、雙腳懸在車外，非常有名。',
@@ -477,14 +634,31 @@ const DAYS = [
      buy:['🧴 Aesop（墨爾本起家的保養品牌）、Jurlique','🥾 UGG（認明澳洲製造標示）','🍫 Koko Black 巧克力（墨爾本品牌）','👕 Country Road、Cotton On 等澳洲平價服飾','🛒 地下超市：Tim Tam 餅乾、Vegemite、蜂蜜、保健食品（價格比觀光區便宜）'],
      tips:['同一家店買滿 300 澳幣可開退稅發票 (Tax Invoice)，機場辦退稅','購物中心很大，先看地圖、和團員約好集合點','超市買的保健食品記得保留收據'],
      near:[]},
-    {type:'shop',name:'採買：Chadstone 購物焦點',gq:'Chadstone Shopping Centre',en:'今天是整趟行程的採購大本營',ll:null,
-     short:'AFL 隊帽、遊戲卡牌，一次在這裡買齊。',products:['afl','tcg'],
-     tips:['Frank Green 潮流保溫杯專櫃也值得逛（約 AUD 45–60）','各店位置、樓層請以商場官方地圖為準'],
-     note:'手冊提到的「The AFL Store」查不到墨爾本的門市資料，AFL 隊帽可以先到 Rebel 等運動用品店找。'},
-    {type:'shop',name:'採買：Chemist Warehouse Chadstone',gq:'Chemist Warehouse Chadstone',en:'Chadstone 購物中心內・1341 Dandenong Rd',ll:[-37.8869,145.0843],
-     short:'魚油、兒童 DHA、木瓜霜等保健藥妝一次買齊。',products:['chemist'],
+    {type:'shop',star:true,px:'chemist-warehouse',name:'採買：Chemist Warehouse Chadstone',gq:'Chemist Warehouse Chadstone',en:'Chadstone 購物中心內・1341 Dandenong Rd',ll:[-37.8869,145.0843],
+     short:'魚油、兒童 DHA、木瓜霜等保健藥妝一次買齊；精選採購清單的藥局品項也在這裡買。',products:['chemist'],order:'pharmacy',
+     extra:[{title:'🗺 Chadstone 採買順序建議（15:30–18:00）', items:[
+       '先到 Chemist Warehouse：清單最長（藥局品項 10 項 17 件），預留約 45–60 分鐘',
+       '再去 Aesop（Ground Level）、Myer／David Jones 的 Jurlique 專櫃',
+       '最後去 Coles／Woolworths 超市買零食，避免一直提著大包小包',
+       '集合前把液體類先整理好，回飯店再分裝進托運行李'],
+       note:'營業時間約 8:00–21:00（各來源不一，以現場為準）'}],
      tips:['台灣入境規定：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）','熱門商品常有每人限購數量','木瓜霜、乳液等膏狀、液狀商品要放托運行李'],
      note:'門市在購物中心內，確切位置請看商場地圖（地址來源：澳洲政府 healthdirect 醫療服務名錄）。'},
+    {type:'shop',name:'採買：超市（Coles／Woolworths）',gq:'Coles Chadstone',en:'Chadstone 購物中心內的超市',ll:[-37.8873,145.0822],
+     short:'精選採購清單：澳洲零食兩項；順便看看 Tim Tam、蜂蜜等伴手禮。',order:'super',
+     nearTitle:'🏬 超市', near:[
+      {name:'Coles Chadstone',gq:'Coles Chadstone',ll:[-37.8873,145.0822],desc:'大型超市，零食、伴手禮齊全。'},
+      {name:'Woolworths Chadstone',gq:'Woolworths Chadstone',ll:[-37.8848,145.0855],desc:'大型超市，價格常和 Coles 比較著看。'}
+     ]},
+    {type:'shop',name:'採買：Aesop Chadstone',gq:'Aesop Chadstone',en:'Chadstone 購物中心 Ground Level',ll:[-37.8865,145.0835],
+     short:'精選採購清單：Aesop 洗手乳。',order:'aesop'},
+    {type:'shop',name:'採買：Jurlique 護手霜（百貨專櫃）',gq:'Myer Chadstone',en:'Chadstone 的 Myer、David Jones 百貨',ll:[-37.8857,145.0846],
+     short:'精選採購清單：Jurlique 護手霜三種香味，共 11 支。',order:'jurlique',
+     nearTitle:'🏬 專櫃', near:[
+      {name:'Myer Chadstone',gq:'Myer Chadstone',ll:[-37.8857,145.0846],desc:'百貨公司，美妝區有 Jurlique 專櫃。'},
+      {name:'David Jones Chadstone',gq:'David Jones Chadstone',ll:[-37.8869,145.0817],desc:'百貨公司，美妝區有 Jurlique 專櫃。'}
+     ],
+     note:'Jurlique 在澳洲主要在百貨專櫃販售，是否有貨、尺寸以現場為準。'},
     {type:'shop',name:'採買：美麗諾羊毛衛生衣（代買）',gq:'Icebreaker Chadstone',en:'Chadstone 購物中心內：Icebreaker、Macpac',ll:[-37.8858,145.0838],
      short:'兩家都有美麗諾衛生衣（Base Layer），可以比較款式和價格。',products:['merino'],
      nearTitle:'🏬 門市', near:[
@@ -492,6 +666,10 @@ const DAYS = [
       {name:'Macpac Chadstone',gq:'Macpac Chadstone',ll:[-37.8866,145.0826],desc:'紐西蘭戶外品牌，有自家美麗諾衛生衣。位於 Lower Ground 樓層。'}
      ],
      note:'門市位置來自品牌官網與商場資料，可能有異動，到了先看商場地圖或問服務台。'},
+    {type:'shop',name:'採買：Chadstone 購物焦點',gq:'Chadstone Shopping Centre',en:'今天是整趟行程的採購大本營',ll:null,
+     short:'Frank Green 保溫杯、AFL 隊帽、遊戲卡牌，一次在這裡買齊。',products:['frankgreen','afl','tcg'],
+     tips:['各店位置、樓層請以商場官方地圖為準'],
+     note:'手冊提到的「The AFL Store」查不到墨爾本的門市資料，AFL 隊帽可以先到 Rebel 等運動用品店找。'},
     {type:'meal',img:'docklands', time:'19:00–20:15', drive:'約 35 分鐘', name:'晚餐：Docklands Lotus 中餐 7 菜 1 湯',gq:'Docklands Lotus 16 New Quay Promenade',en:'16 New Quay Promenade, Docklands',ll:[-37.8130,144.9405],
      short:'位於 Docklands 濱水區的中式餐廳。',
      intro:'Docklands 是墨爾本的港區新開發地，水岸邊餐廳林立，晚上可欣賞港灣夜景。',
@@ -535,6 +713,13 @@ const DAYS = [
      see:['巷弄裡的露天咖啡座氛圍','Centre Place 的塗鴉與小店'],
      buy:['☕ 點一杯 Flat White（墨爾本代表性咖啡，比拿鐵奶少、咖啡更濃）','Long Black（類似美式但更濃）'],
      tips:['墨爾本咖啡館多半下午 3～4 點就打烊','點咖啡可以指定「Large / Small」和牛奶種類（Oat、Soy 等）'],
+     extra:[{title:'☕ 墨爾本為什麼是「咖啡之都」', items:[
+       '二戰前，澳洲承襲英國的喝茶文化，咖啡多半是即溶或品質普通的濾泡咖啡',
+       '1950 年代，義大利移民把當時最先進的拉桿式義式咖啡機（例如 Gaggia）帶進墨爾本，大家第一次喝到帶著油脂（Crema）、濃郁的真正 Espresso',
+       '義大利人開的咖啡館和小餐館（Trattoria）是移民解鄉愁的聚會地，也讓墨爾本人接觸到圍繞咖啡的歐式生活',
+       '之後在地咖啡師不斷改良烘豆和沖煮，誕生了 Flat White，並演變成講究豆子產地、烘焙層次和拉花的精品咖啡文化',
+       '想追溯源頭：據說最早的義式咖啡機出現在 Lygon St 的咖啡館（例如 University Cafe），Bourke St 的 Pellegrini\'s 也是元老級咖啡吧，各家說法不一'],
+       note:'D3、D4 早上的 Patricia、D2 的 Market Lane 都是現代精品咖啡的代表'}],
      near:[
       {name:'Hardware Lane',gq:'Hardware Lane Melbourne',ll:[-37.8130,144.9608],desc:'紅磚步道和露天餐廳，晚上氣氛很好。'}
      ]},
@@ -566,9 +751,16 @@ const DAYS = [
       {name:'Birrarung Marr 公園',gq:'Birrarung Marr',ll:[-37.8187,144.9730],desc:'沿雅拉河的公園，有大型鐘塔裝置藝術。'},
       {name:'雅拉河畔步道',gq:'Southbank Promenade Melbourne',ll:[-37.8195,144.9675],desc:'沿河散步可走到 Southbank，夜景很美。'}
      ]},
-    {type:'shop',name:'採買：Market Lane Coffee Collins St 店',closed:{days:[0,6],msg:'Market Lane Collins St 店週末公休'},gq:'Market Lane Coffee 8 Collins St Melbourne',en:'8 Collins St（Portland House）',time:'16:00–19:30 自由逛街',ll:[-37.8140,144.9729],
+    {type:'shop',star:true,px:'chemist-warehouse',time:'16:00–19:30 自由逛街',name:'採買：Chemist Warehouse Melbourne Central',gq:'Chemist Warehouse Melbourne Central',en:'Melbourne Central 地下樓層 LG 50・300 Lonsdale St',ll:[-37.8107,144.9636],
+     short:'D4 沒買齊的保健品、精選採購清單的藥局品項在這裡補，和 EB Games 在同一棟。',products:['chemist'],order:'pharmacy',
+     tips:['台灣入境規定：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）','熱門商品常有每人限購數量','木瓜霜、乳液等膏狀、液狀商品要放托運行李'],
+     note:'地址來源：澳洲政府 healthdirect 醫療服務名錄。附近另一家在 Bourke St 345 號 London Stores 2 樓（店家目錄資料，出發前請確認）。'},
+    {type:'shop',name:'採買：Market Lane Coffee Collins St 店',closed:{days:[0,6],msg:'Market Lane Collins St 店週末公休'},gq:'Market Lane Coffee 8 Collins St Melbourne',en:'8 Collins St（Portland House）',ll:[-37.8140,144.9729],
      short:'D2 沒買到 Market Lane 的話，在這裡補買。',products:['marketlane'],
      note:'⚠️ 只有平日營業（7:00–17:00），週末公休，要在 17:00 前到。'},
+    {type:'shop',name:'採買：Kathmandu 美麗諾衛生衣',gq:'Kathmandu Melbourne CBD',en:'市區門市（Emporium Melbourne 等）',ll:[-37.8124,144.9641],
+     short:'D4 沒買到或想比價，可以在這裡補買。',products:['merino'],
+     note:'Kathmandu 市區門市的資料不夠新（報導提過 Emporium Melbourne、Little Collins St），出發前請用官網門市查詢確認；也可以在官網商品頁查各門市庫存。'},
     {type:'shop',name:'採買：Rebel 運動用品旗艦店',gq:'rebel Emporium Melbourne',en:'Emporium Melbourne 4 樓',ll:[-37.8121,144.9637],
      short:'AFL 球隊帽、球衣。',products:['afl'],
      note:'手冊寫的 Swanston St「The AFL Store」查不到現有門市資料，改推 Rebel 旗艦店。'},
@@ -576,13 +768,6 @@ const DAYS = [
      short:'遊戲卡牌、平價生活用品。',products:['tcg']},
     {type:'shop',name:'採買：EB Games Melbourne Central',gq:'EB Games Melbourne Central',en:'Melbourne Central（Swanston St 側）',ll:[-37.8102,144.9628],
      short:'遊戲卡牌、電玩周邊。',products:['tcg']},
-    {type:'shop',name:'採買：Chemist Warehouse Melbourne Central',gq:'Chemist Warehouse Melbourne Central',en:'Melbourne Central 地下樓層 LG 50・300 Lonsdale St',ll:[-37.8107,144.9636],
-     short:'D4 沒買齊的保健品在這裡補，和 EB Games 在同一棟。',products:['chemist'],
-     tips:['台灣入境規定：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）','熱門商品常有每人限購數量','木瓜霜、乳液等膏狀、液狀商品要放托運行李'],
-     note:'地址來源：澳洲政府 healthdirect 醫療服務名錄。附近另一家在 Bourke St 345 號 London Stores 2 樓（店家目錄資料，出發前請確認）。'},
-    {type:'shop',name:'採買：Kathmandu 美麗諾衛生衣',gq:'Kathmandu Melbourne CBD',en:'市區門市（Emporium Melbourne 等）',ll:[-37.8124,144.9641],
-     short:'D4 沒買到或想比價，可以在這裡補買。',products:['merino'],
-     note:'Kathmandu 市區門市的資料不夠新（報導提過 Emporium Melbourne、Little Collins St），出發前請用官網門市查詢確認；也可以在官網商品頁查各門市庫存。'},
     {type:'meal',name:'晚餐：逛街方便（每人發放 30 澳幣）',time:'自由用餐',ll:null,short:'自由用餐。',
      note:'推薦：唐人街 Little Bourke St 的港式點心或拉麵、Degraves St 周邊小館、Southbank 河岸餐廳。若是週三（夏季 11～3 月、冬季 6～8 月），可以去維多利亞女王市場夜市。'},
     {...OAKWOOD, time:'20:00 回飯店'}
@@ -740,11 +925,20 @@ const ntd = a => Math.round(a*rate/10)*10;
 const priceTxt = ([label,lo,hi]) => lo===hi
   ? `${label}：AUD ${lo}（約 NT$ ${ntd(lo).toLocaleString()}）`
   : `${label}：AUD ${lo}–${hi}（約 NT$ ${ntd(lo).toLocaleString()}–${ntd(hi).toLocaleString()}）`;
+// 採買焦點的商品圖：縮圖可放大，附「看商品圖」與來源
+function pimgHTML(pr){
+  if(pr.pimgs) return `<div class="pimgs">${pr.pimgs.map(x => `<figure><img class="othumb" src="${x.img}" alt="${esc(x.cap)}" loading="lazy" data-zoom="${x.img}" data-cap="${esc(x.cap)}" data-src="${esc(x.src)}" data-url="${esc(x.url)}">
+      <figcaption>${esc(x.cap)}<br><a href="${esc(x.url)}" target="_blank" rel="noopener">🔍 看商品圖</a></figcaption></figure>`).join('')}</div>
+    <small class="osrc">圖片來源：${esc(pr.pimgs[0].src)}</small>`;
+  if(!pr.url) return '';
+  return `<div class="pimg">${pr.img?`<img class="othumb" src="${pr.img}" alt="${esc(pr.name)}" loading="lazy" data-zoom="${pr.img}" data-cap="${esc(pr.name)}" data-src="${esc(pr.src)}" data-url="${esc(pr.url)}">`:''}
+    <small class="osrc"><a href="${esc(pr.url)}" target="_blank" rel="noopener">🔍 看商品圖</a>${pr.src?`<br>圖片來源：${esc(pr.src)}`:'<br>官網商品頁'}</small></div>`;
+}
 function productHTML(id){
   const pr = PRODUCTS[id]; if(!pr) return '';
   return `<div class="prod ${bought[id]?'got':''}"><div class="pn">🛒 <span>${esc(pr.name)}</span>
     <label><input type="checkbox" data-buy="${id}" ${bought[id]?'checked':''}> 已買到</label></div>
-    <p>${esc(pr.desc)}</p><div class="price">${pr.prices.map(x=>`💰 ${esc(priceTxt(x))}`).join('<br>')}</div>
+    ${pimgHTML(pr)}<p>${esc(pr.desc)}</p><div class="price">${pr.prices.map(x=>`💰 ${esc(priceTxt(x))}`).join('<br>')}</div>
     ${pr.tips?`<div class="ptips"><b>⚠️ 購買注意</b><ul>${pr.tips.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:''}</div>`;
 }
 // 「在 Google 地圖開啟」：一般搜尋連結，不需要 API key；手機會直接開 Google 地圖 App
@@ -806,6 +1000,26 @@ function flightCalc(key){
   return {dur, h:Math.floor(dur / 60), m:dur % 60, plusDay:Math.floor(arrLocal / 1440), tz:diff / 60, odd: dur < 7 * 60 || dur > 13 * 60};
 }
 const flightSearch = f => 'https://www.google.com/search?q=' + encodeURIComponent(`${f.no} flight status`);
+/* ============ 商品圖彈窗（點縮圖放大） ============ */
+function openLightbox(img){
+  let lb = document.getElementById('lightbox');
+  if(!lb){
+    lb = document.createElement('div'); lb.id = 'lightbox';
+    lb.innerHTML = '<button type="button" class="lbx" aria-label="關閉">✕</button><figure><img alt=""><figcaption></figcaption></figure>';
+    document.body.appendChild(lb);
+    lb.addEventListener('click', e => { if(!e.target.closest('a')) lb.hidden = true; });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') lb.hidden = true; });
+  }
+  lb.querySelector('img').src = img.dataset.zoom;
+  lb.querySelector('figcaption').innerHTML = `${esc(img.dataset.cap)}<br><small>圖片來源：<a href="${esc(img.dataset.url)}" target="_blank" rel="noopener">${esc(img.dataset.src)}</a>（僅供辨識包裝，非商業使用）</small>`;
+  lb.hidden = false;
+}
+// 縮圖在 <label> 裡，點圖要攔下來，避免順便勾選
+document.addEventListener('click', e => {
+  const z = e.target.closest('[data-zoom]'); if(!z) return;
+  e.preventDefault(); e.stopPropagation(); openLightbox(z);
+}, true);
+
 function flightHTML(key){
   const f = FL[key], c = flightCalc(key), out = key === 'out';
   const [a, b] = out ? ['TPE 桃園', 'MEL 墨爾本'] : ['MEL 墨爾本', 'TPE 桃園'];
@@ -979,7 +1193,7 @@ function closedHTML(it, cls){
   const wd = new Date(d+'T00:00:00').getDay(); if(!it.closed.days.includes(wd)) return '';
   return `<div class="${cls||'cardx'} closedcard">⚠️ 這天是 ${mmdd(d)} 星期${WD[wd]}：${esc(it.closed.msg)}</div>`;
 }
-function itemNums(d){ let n = 0; return d.items.map(it => (it.ll && it.type!=='shop') ? ++n : null); }
+function itemNums(d){ let n = 0; return d.items.map(it => (it.ll && it.type!=='shop' && !it.optional) ? ++n : null); }
 function photoFig(it){
   const ph = photo(it.img); if(!ph) return '';
   return `<figure class="photo"><img src="${ph.src}" alt="${esc(ph.caption)}" loading="lazy">
@@ -988,8 +1202,8 @@ function photoFig(it){
 // 卡片標頭：編號、類型、時間、名稱、簡介、航班、Google 地圖
 function headHTML(it, num){
   const t = TYPE[it.type];
-  return `<div class="badge ${it.ll?'':'nomap'}" style="background:${t.hex}">${it.type==='shop'?'🛒':(it.ll?num:'·')}</div>
-    <div class="k" style="color:${t.hex}">${t.label}${it.time?`<span class="time">${esc(it.time)}</span>`:''}</div>
+  return `<div class="badge ${it.ll?'':'nomap'}" style="background:${t.hex}">${it.optional?'☕':it.type==='shop'?'🛒':(it.ll?num:'·')}</div>
+    <div class="k" style="color:${t.hex}">${t.label}${it.time?`<span class="time">${esc(it.time)}</span>`:''}${it.star?'<span class="star">⭐ 重點店家</span>':''}${it.optional?'<span class="opt">🌅 早起選配</span>':''}</div>
     <h3>${esc(it.name)}</h3>
     ${it.en?`<div class="en">${esc(it.en)}</div>`:''}
     ${it.short?`<div class="short">${esc(it.short)}</div>`:''}
@@ -999,14 +1213,14 @@ function headHTML(it, num){
 // 詳細內容：像素／照片、介紹、商品、必看、必買、小提醒、附近、備註
 function bodyHTML(it, i){
   const prods = (it.products||[]).map(productHTML).join('');
-  const hasDetail = it.intro||it.note||prods||(it.tips&&it.tips.length)||(it.see&&it.see.length)||(it.near&&it.near.length);
+  const hasDetail = it.intro||it.note||it.order||prods||(it.tips&&it.tips.length)||(it.see&&it.see.length)||(it.near&&it.near.length);
   if(!hasDetail) return '';
   const near = (it.near||[]).map((x,j)=>`<div class="${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`).join('');
   return `<div class="detail">
     ${photoFig(it)}${pixelHTML(it)}
     ${it.intro?`<div>${esc(it.intro)}</div>`:''}
     ${(it.extra||[]).map(x => extraHTML(x, '')).join('')}
-    ${prods}
+    ${prods}${it.order?orderHTML(it.order):''}
     ${listItems(it.see, it.type==='spot'?'👀 必看':'👀 看點')}
     ${listItems(it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃')}
     ${listItems(it.tips,'💡 小提醒')}
@@ -1033,6 +1247,7 @@ function colHTML(it, i, num){
   if(it.intro) cards.push(`<div class="cardx"><h4>📖 介紹</h4><p>${esc(it.intro)}</p></div>`);
   (it.extra||[]).forEach(x => cards.push(extraHTML(x, 'cardx')));
   (it.products||[]).forEach(id => cards.push(productHTML(id)));
+  if(it.order) cards.push(orderHTML(it.order));
   [[it.see, it.type==='spot'?'👀 必看':'👀 看點'], [it.buy, it.type==='meal'?'🍽 必吃':'🛍 必買／必吃'], [it.tips, '💡 小提醒']]
     .forEach(([lst, title]) => { if(lst && lst.length) cards.push(`<div class="cardx">${listItems(lst, title)}</div>`); });
   if(it.near && it.near.length){
@@ -1043,7 +1258,7 @@ function colHTML(it, i, num){
   const closed = closedHTML(it); if(closed) cards.unshift(closed);
   return `<section class="col" id="i${i}" data-i="${i}" style="--c:${t.hex}" aria-label="${esc(it.name)}">
     <header class="colhead">
-      <div class="k" style="color:${t.hex}"><span class="scnum" style="background:${t.hex}">${it.type==='shop'?'🛒':(num??'·')}</span>${t.label}${it.time?`<span class="time">${esc(it.time)}</span>`:''}</div>
+      <div class="k" style="color:${t.hex}"><span class="scnum" style="background:${t.hex}">${it.optional?'☕':it.type==='shop'?'🛒':(num??'·')}</span>${t.label}${it.time?`<span class="time">${esc(it.time)}</span>`:''}${it.star?'<span class="star">⭐ 重點店家</span>':''}${it.optional?'<span class="opt">🌅 早起選配</span>':''}</div>
       <h3>${esc(it.name)}</h3>
       ${it.en?`<div class="en">${esc(it.en)}</div>`:''}
       ${it.drive?`<div class="scdrive">🚌 ${esc(it.drive)}</div>`:''}
@@ -1075,12 +1290,12 @@ function renderDay(){
   d.items.forEach((it,i)=>{
     if(!it.ll) return;
     all.push(it.ll);
-    const shop = it.type==='shop';
+    const shop = it.type==='shop' || it.optional;     // 採買、選配：不編號、不連路線
     if(!shop){ n++; pts.push(it.ll); }
-    const m = L.marker(it.ll,{icon:pinIcon(shop?'🛒':n,it.type,false),zIndexOffset:it.type==='spot'?100:0})
+    const m = L.marker(it.ll,{icon:pinIcon(shop?(it.optional?'☕':it.star?'⭐':'🛒'):n,it.type,false),zIndexOffset:it.star?200:it.type==='spot'?100:0})
       .bindPopup(`${photo(it.img)?`<img class="pop-img" src="${photo(it.img).src}" alt="">`:''}<b>${esc(it.name)}</b><br>${esc(it.short||'')}${it.gq?`<br>${gmapBtn(it.gq,true)}`:''}`,{maxWidth:240})
       .on('click',()=>selectItem(i,true));
-    m._num = shop?'🛒':n; m._type = it.type;
+    m._num = shop?(it.optional?'☕':it.star?'⭐':'🛒'):n; m._type = it.type;
     m.addTo(dayLayer); markers[i] = m;
   });
   if(pts.length>1) L.polyline(pts,{color:'#16324f',weight:2.5,opacity:.55,dashArray:'6 8'}).addTo(dayLayer);
@@ -1173,8 +1388,8 @@ $('#list').addEventListener('change',e=>{
   if(!cb) return;
   const id = cb.dataset.buy; bought[id] = cb.checked; saveShop();
   // 同一商品可能出現在多張卡片，一起更新
-  document.querySelectorAll(`[data-buy="${id}"]`).forEach(x=>{ x.checked = cb.checked; const box = x.closest('.prod,.row'); if(box) box.classList.toggle('got',cb.checked); });
-  if(curDay===7) renderShopRows();   // 更新「已買 n / m」
+  document.querySelectorAll(`[data-buy="${id}"]`).forEach(x=>{ x.checked = cb.checked; const box = x.closest('.prod,.row,.orow'); if(box) box.classList.toggle('got',cb.checked); });
+  if(curDay===7){ renderShopRows(); renderOrderRows(); }   // 更新「已買 n / m」
 });
 $('#list').addEventListener('click',e=>{
   if(e.target.closest('a')) return;   // 點作者連結時不要收合卡片
@@ -1210,11 +1425,15 @@ function renderCheat(){
     <section><h3>💱 匯率換算</h3>
       <div class="cvt"><input id="aud" type="number" value="10" min="0"> 澳幣 ≈ <b id="twd"></b> 台幣
       <span style="font-size:12px;color:var(--muted)">（匯率 1 AUD ≈ <input id="rate" type="number" step="0.1" value="${rate}" style="width:60px"> TWD，預設依手冊換算，可自行修改；採買價格會跟著更新）</span></div></section>
+    ${focusStoreHTML()}
     <section class="shoplist"><h3>🛒 採買清單 <span id="shopCount" style="font-size:12px;color:var(--muted);font-weight:500"></span></h3>
       <div id="shopRows"></div>
       <form id="shopAdd"><input id="shopNew" placeholder="新增自己想買的東西，例如：UGG 雪靴" maxlength="60"><button>新增</button></form>
       <div class="shopfoot"><span>＊打勾與自訂項目只存在這台裝置的瀏覽器裡（重新整理不會消失，也不會影響其他人）；價格與店點整理自行程手冊，出發前請再確認</span>
         <button type="button" id="shopReset">↺ 重設清單</button></div></section>
+    <section class="ordersec"><h3>📦 精選採購清單（代購 13 項） <span id="orderCount" style="font-size:12px;color:var(--muted);font-weight:500"></span></h3>
+      <div id="orderRows"></div>
+      <div class="shopfoot"><span>＊依「澳洲精選採購清單」PDF 整理。點縮圖可以放大；商品圖片取自 Chemist Warehouse、PChome 24h、Pak'nSave 的商品頁，各自註明來源，僅供現場辨識包裝、非商業使用，著作權屬原網站與品牌。Jurlique 官網暫時無法讀取，先連到 Google 圖片搜尋。打勾和行程卡片同步，按上方「重設清單」也會一起清除</span></div></section>
     <section><h3>🧾 退稅 TRS</h3><ul>
       <li>同一商家（同一 ABN）60 天內消費滿 <b>300 澳幣</b>（含稅），可退 GST 約 1/11</li>
       <li>結帳時請店家開「Tax Invoice」，寫上護照姓名</li>
@@ -1255,12 +1474,12 @@ function renderCheat(){
   const calc = ()=>{ $('#twd').textContent = Math.round(($('#aud').value||0)*($('#rate').value||0)).toLocaleString(); };
   $('#aud').oninput = calc; calc();
   $('#rate').oninput = e => { const v = +e.target.value; if(v>0){ rate = v; try{localStorage.setItem('mel_rate',v)}catch(_){}; renderShopRows(); } calc(); };
-  renderShopRows();
+  renderShopRows(); renderOrderRows();
   $('#shopAdd').onsubmit = e => { e.preventDefault(); const v = $('#shopNew').value.trim(); if(!v) return;
     customShop.push({id:'c'+Date.now(), name:v}); saveShop(); $('#shopNew').value=''; renderShopRows(); };
   $('#shopReset').onclick = () => {
     if(!confirm('要清除所有「已買到」的勾選，並刪除自己新增的項目嗎？（無法復原）')) return;
-    bought = {}; customShop = []; saveShop(); renderShopRows();
+    bought = {}; customShop = []; saveShop(); renderShopRows(); renderOrderRows();
   };
   $('#shopRows').onclick = e => { const b = e.target.closest('.del'); if(!b) return;
     customShop = customShop.filter(x=>x.id!==b.dataset.id); delete bought[b.dataset.id]; saveShop(); renderShopRows(); };
@@ -1276,10 +1495,32 @@ function renderCheat(){
   setMapView(() => map.fitBounds(L.latLngBounds(pts),{padding:[30,30]}));
 }
 
+// 小抄：⭐ 重點店家 Chemist Warehouse
+function focusStoreHTML(){
+  const pr = PRODUCTS.chemist, ph = ORDER.filter(o => o.store === 'pharmacy');
+  return `<section class="focus"><h3>⭐ 重點店家：Chemist Warehouse</h3>
+    <p class="fsub">澳洲最大的平價藥妝連鎖，紅黃招牌很好認。這趟的保健品、藥妝和代購藥局品項都在這裡買。</p>
+    <h4>📍 門市與時間</h4><ul>
+      <li><b>D4 Chadstone</b>（1341 Dandenong Rd，購物中心內）：營業約 8:00–21:00；行程 15:30–18:00 在 Chadstone，建議第一站先來這裡</li>
+      <li><b>D5 Melbourne Central</b>（地下樓層 LG 50，300 Lonsdale St）：營業約 10:00–19:00 或 21:00；D5 是星期六，建議 19:00 前到</li>
+      <li>市區還有很多家分店（第三方目錄列有 Collins St、Flinders St、Bourke St 等），自由時間找最近的一家就好</li></ul>
+    ${gmapBtn('Chemist Warehouse Melbourne CBD')}
+    <h4>🛍 要買什麼</h4><ul>
+      ${pr.prices.map(x => `<li>${esc(priceTxt(x))}</li>`).join('')}
+      <li>代購（精選採購清單）藥局品項：<b>${ph.length} 項、${ph.reduce((n, o) => n + o.qty, 0)} 件</b>，在下方「📦 精選採購清單」打勾</li></ul>
+    <h4>💡 現場購物技巧</h4><ul>
+      <li>看黃色價格牌上的「Don't Pay RRP」，對照建議售價，常有半價特價</li>
+      <li>熱門商品常有每人限購數量，代購的數量先確認</li>
+      <li>部分藥品是藥師專售（Pharmacist Only），要到藥師櫃台詢問</li>
+      <li>台灣入境：錠狀、膠囊狀保健食品每種最多 12 瓶，合計不超過 36 瓶（以海關最新公告為準）</li>
+      <li>乳液、乳霜等液狀膏狀商品放托運行李</li>
+      <li>同一家店買滿 AUD 300 可退稅，結帳時請店員開 Tax Invoice</li></ul>
+    <div class="shopfoot"><span>＊營業時間各來源不一致，以現場為準；價格為官網或比價網參考價</span></div></section>`;
+}
 function renderShopRows(){
-  const rows = Object.entries(PRODUCTS).map(([id,pr])=>`<div class="row ${bought[id]?'got':''}">
+  const rows = PRODUCT_ORDER.map(id => [id, PRODUCTS[id]]).map(([id,pr])=>`<div class="row ${bought[id]?'got':''}">
       <input type="checkbox" data-buy="${id}" ${bought[id]?'checked':''}>
-      <div><div class="nm">${esc(pr.name)}</div>
+      <div><div class="nm">${esc(pr.name)}</div>${pimgHTML(pr)}
         <div class="meta">${pr.prices.map(x=>esc(priceTxt(x))).join('<br>')}</div>
         <div class="meta">📍 ${pr.where.map(esc).join('<br>📍 ')}</div>
         ${pr.tips?`<div class="meta ptips-row">⚠️ ${pr.tips.map(esc).join('<br>⚠️ ')}</div>`:''}</div></div>`)
@@ -1288,7 +1529,7 @@ function renderShopRows(){
       <div><div class="nm">${esc(c.name)}</div><div class="meta">自己新增</div></div>
       <button class="del" data-id="${c.id}" title="刪除">✕</button></div>`)).join('');
   $('#shopRows').innerHTML = rows;
-  const ids = Object.keys(PRODUCTS).concat(customShop.map(c=>c.id));
+  const ids = PRODUCT_ORDER.concat(customShop.map(c=>c.id));
   $('#shopCount').textContent = `已買 ${ids.filter(id=>bought[id]).length} / ${ids.length}`;
 }
 
