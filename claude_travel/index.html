@@ -314,12 +314,12 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- 景點圖片清單：images/images.js（換圖說明見 README） -->
-<script src="images/images.js?v=20261110f"></script>
+<script src="images/images.js?v=20261110h"></script>
 <!-- 各地點歷年 10、11 月平均：data/climate.js（由 tools/build_climate.py 產生） -->
-<script src="data/climate.js?v=20261110f"></script>
+<script src="data/climate.js?v=20261110h"></script>
 <!-- 8-bit 像素場景：pixel/scenes.js（原創，以程式繪製） -->
 <!-- 發佈時更新 ?v= 版本號，避免手機瀏覽器用到快取的舊檔 -->
-<script src="pixel/scenes.js?v=20261110f"></script>
+<script src="pixel/scenes.js?v=20261110h"></script>
 <script>
 /* ============ 行程資料 ============ */
 const TYPE = {
@@ -330,12 +330,12 @@ const TYPE = {
   shop:{label:'採買',color:'var(--shop)',hex:'#db2777'}
 };
 
-/* 精選採購清單（代購，依「澳洲精選採購清單.pdf」：13 項、34 件）。store＝在哪裡買，同一項不同香味／口味拆成多行 */
+/* 精選採購清單（代購，依「澳洲精選採購清單 update.pdf」：18 項、52 件；2026-11-10 更新）。store＝在哪裡買，同一項不同香味／口味拆成多行 */
 // PDF 的三大分類（項次依 PDF 順序）
 const ORDER_CATS = [
   {title:'一、嬰幼護理與防蚊專區',             ids:['o01','o02','o11','o12','o13']},
   {title:'二、手足修護與身體清潔保養',         ids:['o03a','o03b','o03c','o05','o08','o10']},
-  {title:'三、唇部護理、疤痕凝膠與澳洲零食',   ids:['o07a','o07b','o09','o04','o06']}
+  {title:'三、唇部護理、疤痕凝膠、防曬與澳洲零食', ids:['o07a','o07b','o09','o15','o16','o04','o06']}
 ];
 const ORDER_STORES = {
   pharmacy:{name:'💊 藥局（Chemist Warehouse）', tag:'💊 藥局', where:'D4 Chadstone 店；D5 Melbourne Central 店可補買'},
@@ -344,22 +344,24 @@ const ORDER_STORES = {
   super:   {name:'🛒 超市（Coles／Woolworths）', tag:'🛒 超市', where:'D4 Chadstone 超市；市區、飯店附近超市也有'}
 };
 const ORDER = [
-  {id:'o01', img:'images/products/o01.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/31906',  no:'01', store:'pharmacy', brand:'Aerogard',       name:'樂澳家防蚊液 Odourless Insect Repellent', spec:'135ml', qty:4, note:'超市也有賣。如果是噴霧罐（aerosol），航空公司可能不收，結帳前看清楚或問華航'},
-  {id:'o02', img:'images/products/o02.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/144859',  no:'02', store:'pharmacy', brand:'BioGaia',        name:'乖寶亞益生菌滴劑 Protectis Baby Probiotic Drops', spec:'5ml', qty:4, note:'另有「加維生素 D」的版本，依清單圖片確認包裝'},
-  {id:'o11', img:'images/products/o11.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73115',  no:'11', store:'pharmacy', brand:'Ego QV',         name:'小老虎嬰兒乳霜 QV Baby Moisturising Cream', spec:'250ml', qty:1, note:'認明瓶身小老虎圖樣與 250ml 容量'},
-  {id:'o12', img:'images/products/o12.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/120429',  no:'12', store:'pharmacy', brand:'Ego QV',         name:'三重神經醯胺乳液 QV Ceramides Moisturising Lotion', spec:'350ml', qty:1},
-  {id:'o13', img:'images/products/o13.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/4022',  no:'13', store:'pharmacy', brand:'Ego QV',         name:'舒敏加護乳霜 QV Cream for Sensitive Skin', spec:'100g', qty:1},
-  {id:'o05', img:'images/products/o05.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/85488',  no:'05', store:'pharmacy', brand:'Dermal Therapy', name:'足部修護霜 Heel Magic', spec:'70g', qty:1},
-  {id:'o07a', img:'images/products/o07a.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/86416', no:'07', store:'pharmacy', brand:'Dermal Therapy', name:'原味護唇膏 Lip Balm Original', spec:'10g', qty:2},
-  {id:'o07b', img:'images/products/o07b.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/146233', no:'07', store:'pharmacy', brand:'Dermal Therapy', name:'潤色櫻桃色護唇膏 Tinted Lip Balm Cherry Red', spec:'8g', qty:1},
-  {id:'o08', img:'images/products/o08.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73481',  no:'08', store:'pharmacy', brand:"DU'IT",          name:'強效護手霜 Tough Hands Intensive Skin Repair', spec:'155g', qty:1, note:'拿標準大容量規格。Chemist Warehouse 賣的是 150g（清單寫 155g，可能是誤植），包裝見圖'},
-  {id:'o09', img:'images/products/o09.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/93781',  no:'09', store:'pharmacy', brand:'Dermatix Ultra', name:'倍舒痕凝膠 Advanced Scar Formula', spec:'15g', qty:1, note:'藥局專櫃的疤痕修護凝膠。Chemist Warehouse 品名是 Dermatix Ultra Silicone Gel 15g；另有一款普通版 Scar Reduction Gel，別拿錯'},
-  {id:'o10', img:'images/products/o10.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DDCCB6-A900JXEQ1',  no:'10', store:'aesop',    brand:'Aesop',          name:'洗手乳 Aromatique Hand Wash', spec:'500ml', qty:1, note:'琥珀色按壓瓶'},
-  {id:'o03a', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Jasmine+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 茉莉 Jasmine', spec:'30ml', qty:6},
-  {id:'o03b', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Lavender+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 薰衣草 Lavender', spec:'30ml', qty:4},
-  {id:'o03c', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Rose+Hand+Cream', src:'', no:'03', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 玫瑰 Rose', spec:'30ml', qty:1},
-  {id:'o04', img:'images/products/o04.jpg', src:'Pak\'nSave（紐西蘭超市）', url:'https://www.paknsave.co.nz/shop/product/5345103_ea_000pns',  no:'04', store:'super',    brand:'Sunbites',       name:'穀物波浪餅乾 Grain Waves Minis', spec:'150g', qty:2, note:'條裝分享包'},
-  {id:'o06', img:'images/products/o06.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DBAEFS-A900AY900',  no:'06', store:'super',    brand:'Jumpys',         name:'袋鼠餅乾大包裝 Crunchy Potato Snacks 10 Pack', spec:'180g', qty:3, note:'要大包裝（10 小包）'}
+  {id:'o01', img:'images/products/o01.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/31906',  no:'01', store:'pharmacy', brand:'Aerogard',       name:'樂澳家防蚊液 Odourless Insect Repellent', spec:'135ml', qty:6, note:'超市也有賣。如果是噴霧罐（aerosol），航空公司可能不收，結帳前看清楚或問華航'},
+  {id:'o02', img:'images/products/o02.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/144859',  no:'02', store:'pharmacy', brand:'BioGaia',        name:'乖寶亞益生菌滴劑 Protectis Baby Probiotic Drops', spec:'5ml', qty:5, note:'另有「加維生素 D」的版本，依清單圖片確認包裝'},
+  {id:'o11', img:'images/products/o11.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73115',  no:'03', store:'pharmacy', brand:'Ego QV',         name:'小老虎嬰兒乳霜 QV Baby Moisturising Cream', spec:'250ml', qty:1, note:'認明瓶身小老虎圖樣與 250ml 容量'},
+  {id:'o12', img:'images/products/o12.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/120429',  no:'04', store:'pharmacy', brand:'Ego QV',         name:'三重神經醯胺乳液 QV Ceramides Moisturising Lotion', spec:'350ml', qty:1},
+  {id:'o13', img:'images/products/o13.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/4022',  no:'05', store:'pharmacy', brand:'Ego QV',         name:'舒敏加護乳霜 QV Cream for Sensitive Skin', spec:'100g', qty:1},
+  {id:'o05', img:'images/products/o05.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/85488',  no:'09', store:'pharmacy', brand:'Dermal Therapy', name:'足部修護霜 Heel Magic', spec:'70g', qty:1},
+  {id:'o07a', img:'images/products/o07a.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/86416', no:'12', store:'pharmacy', brand:'Dermal Therapy', name:'原味護唇膏 Lip Balm Original', spec:'10g', qty:6},
+  {id:'o07b', img:'images/products/o07b.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/146233', no:'13', store:'pharmacy', brand:'Dermal Therapy', name:'潤色櫻桃色護唇膏 Tinted Lip Balm Cherry Red', spec:'8g', qty:3},
+  {id:'o08', img:'images/products/o08.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/73481',  no:'10', store:'pharmacy', brand:"DU'IT",          name:'強效護手霜 Tough Hands Intensive Skin Repair', spec:'155g', qty:2, note:'拿標準大容量規格買 2 支；如果有 30ml 小支，改買 3 支。Chemist Warehouse 賣的是 150g（清單寫 155g，可能是誤植），包裝見圖'},
+  {id:'o09', img:'images/products/o09.jpg', src:'Chemist Warehouse', url:'https://www.chemistwarehouse.com.au/buy/93781',  no:'14', store:'pharmacy', brand:'Dermatix Ultra', name:'倍舒痕凝膠 Advanced Scar Formula', spec:'15g', qty:2, note:'藥局專櫃的疤痕修護凝膠。Chemist Warehouse 品名是 Dermatix Ultra Silicone Gel 15g；另有一款普通版 Scar Reduction Gel，別拿錯'},
+  {id:'o15', url:'https://www.google.com/search?tbm=isch&q=La+Roche-Posay+Anthelios+UVMune+400+Invisible+Fluid+SPF50%2B', src:'', no:'15', store:'pharmacy', brand:'La Roche-Posay', name:'理膚寶水 安得利清爽極效夏卡防曬液 Anthelios UVMune 400 Invisible Fluid SPF50+', spec:'', qty:1, note:'無香、防水防汗配方；清單沒寫容量，常見是 50ml。Chemist Warehouse 有賣，也可能在藥局的專櫃區'},
+  {id:'o16', url:'https://www.google.com/search?tbm=isch&q=La+Roche-Posay+Anthelios+Dermo-Pediatrics+Baby+Lotion+SPF50%2B+50ml', src:'', no:'16', store:'pharmacy', brand:'La Roche-Posay', name:'理膚寶水 安得利嬰兒防曬乳 Anthelios Dermo-Pediatrics Baby Lotion SPF50+', spec:'50ml', qty:1, note:'嬰幼兒專用、無香；認明 Baby（嬰兒）字樣，別拿到兒童或成人款'},
+  {id:'o10', img:'images/products/o10.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DDCCB6-A900JXEQ1',  no:'11', store:'aesop',    brand:'Aesop',          name:'洗手乳 Aromatique Hand Wash', spec:'500ml', qty:2, note:'琥珀色按壓瓶'},
+  {id:'o03a', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Jasmine+Hand+Cream', src:'', no:'06', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 茉莉 Jasmine', spec:'30ml', qty:6},
+  {id:'o03b', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Lavender+Hand+Cream', src:'', no:'07', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 薰衣草 Lavender', spec:'30ml', qty:4},
+  {id:'o03c', url:'https://www.google.com/search?tbm=isch&q=Jurlique+Rose+Hand+Cream', src:'', no:'08', store:'jurlique', brand:'Jurlique',       name:'茱莉蔻護手霜 玫瑰 Rose', spec:'30ml', qty:1},
+  {id:'o04', img:'images/products/o04.jpg', src:'Pak\'nSave（紐西蘭超市）', url:'https://www.paknsave.co.nz/shop/product/5345103_ea_000pns',  no:'17', store:'super',    brand:'Sunbites',       name:'穀物波浪餅乾 Grain Waves Minis', spec:'150g', qty:5, note:'條裝分享包'},
+  {id:'o06', img:'images/products/o06.jpg', src:'PChome 24h', url:'https://24h.pchome.com.tw/prod/DBAEFS-A900AY900',  no:'18', store:'super',    brand:'Jumpys',         name:'袋鼠餅乾大包裝 Crunchy Potato Snacks 10 Pack', spec:'180g', qty:4, note:'要大包裝（10 小包）'}
 ];
 const ORDER_NOTES = {
   pharmacy:['乳液、乳霜等液狀膏狀商品放托運行李','Chemist Warehouse 價格常變動，熱門品項可能限購'],
@@ -380,7 +382,7 @@ function orderRow(o, showStore){
 }
 // 行程卡片：這家店要買的精選採購品項
 function orderHTML(store){
-  const list = ORDER.filter(o => o.store === store); if(!list.length) return '';
+  const list = ORDER.filter(o => o.store === store).sort((x, y) => x.no.localeCompare(y.no)); if(!list.length) return '';
   const n = list.reduce((a, o) => a + o.qty, 0);
   return `<div class="order"><div class="ohead">📦 精選採購清單：這裡要買 ${list.length} 項、${n} 件</div>${list.map(orderRow).join('')}
     ${(ORDER_NOTES[store]||[]).length?`<div class="onote">💡 ${ORDER_NOTES[store].map(esc).join('<br>💡 ')}</div>`:''}</div>`;
@@ -626,7 +628,7 @@ const DAYS = [
 },
 {
   title:'Day 4　蒸汽火車、酒莊、購物', tab:'D4', sub:'丹頓農山',
-  route:'普芬比利蒸汽火車 → 羅奇福德酒莊 → Chadstone 購物中心 → Docklands 晚餐', wx:{loc:'dandenong',notes:['📍 這裡顯示的是丹頓農山的天氣，不是墨爾本市區：山上早晚比市區冷，iPhone 看市區天氣會覺得兩邊差很多','山區比市區稍涼，森林裡較潮濕、下雨機率也較高','坐火車窗邊時風大，帶一件防風外套',
+  route:'普芬比利蒸汽火車 → 羅奇福德酒莊 → Chadstone 購物中心 → Docklands 晚餐', wx:{loc:'dandenong',notes:['🤢 普芬比利 → 酒莊是約 40 分鐘的彎曲山路，容易暈車的人上車前先吃暈車藥、坐前排（詳見酒莊卡片）','📍 這裡顯示的是丹頓農山的天氣，不是墨爾本市區：山上早晚比市區冷，iPhone 看市區天氣會覺得兩邊差很多','山區比市區稍涼，森林裡較潮濕、下雨機率也較高','坐火車窗邊時風大，帶一件防風外套',
   '👕 一天會從山上換到購物中心，穿「可以一層層脫掉」的洋蔥式：短袖或薄長袖＋薄毛衣／刷毛＋防風外套',
   '🚂 早上坐蒸汽火車：全部穿上，森林裡又濕又涼；🍷 中午酒莊：外套可以脫',
   '🛍 下午 Chadstone：室內有空調，大約 22 度，只穿裡面那層就好；外套收進背包，或摺起來塞進購物袋，逛起來比較輕鬆',
@@ -656,6 +658,12 @@ const DAYS = [
      see:['一望無際的葡萄園與山谷景色','品酒室 (Cellar Door) 的品酒體驗'],
      buy:['🍷 酒莊限定的 Pinot Noir、Chardonnay，酒莊才買得到的年份','酒莊自製的橄欖油、果醬'],
      tips:['澳洲入境台灣每人免稅酒類 1 公升（1 瓶），多買要申報繳稅','酒瓶託運可用酒莊的保護包裝或包在衣服裡','品酒小口就好，後面還有購物行程'],
+     extra:[{title:'🤢 容易暈車的注意', items:[
+       '從普芬比利開到酒莊這段是山路，彎道多、上上下下，約 40 分鐘，是整趟旅程最容易暈車的一段',
+       '遊覽車坐前排、靠窗，看遠方，不要低頭滑手機或看書；可以先跟領隊說容易暈車，請他安排坐前面',
+       '暈車藥要在上車前 30～60 分鐘吃：早上搭完蒸汽火車、上遊覽車前吃。台灣帶去最方便，忘了帶的話 Chemist Warehouse 有賣（例如 Travacalm、Kwells），買時請藥師依狀況推薦',
+       '有些暈車藥會讓人想睡；有慢性病或正在吃其他藥的人，先問藥師或醫師',
+       '下午酒莊 → Chadstone 約 50～60 分鐘，前段還有一點山路；中午喝了酒更容易不舒服，品酒小口就好']}],
      near:[
       {name:'Yarra Valley Chocolaterie',gq:'Yarra Valley Chocolaterie',ll:[-37.6880,145.3920],desc:'巧克力工廠，免費試吃區非常大方。'},
       {name:'Domaine Chandon',gq:'Domaine Chandon Australia',ll:[-37.6980,145.4400],desc:'法國酩悅香檳在澳洲的氣泡酒莊。'},
@@ -1518,7 +1526,7 @@ function renderCheat(){
       <form id="shopAdd"><input id="shopNew" placeholder="新增自己想買的東西，例如：UGG 雪靴" maxlength="60"><button>新增</button></form>
       <div class="shopfoot"><span>＊打勾與自訂項目只存在這台裝置的瀏覽器裡（重新整理不會消失，也不會影響其他人）；價格與店點整理自行程手冊，出發前請再確認</span>
         <button type="button" id="shopReset">↺ 重設清單</button></div></section>
-    <section class="ordersec"><h3>📦 精選採購清單（代購 13 項） <span id="orderCount" style="font-size:12px;color:var(--muted);font-weight:500"></span></h3>
+    <section class="ordersec"><h3>📦 精選採購清單（代購 18 項） <span id="orderCount" style="font-size:12px;color:var(--muted);font-weight:500"></span></h3>
       <div id="orderRows"></div>
       <div class="shopfoot"><span>＊依「澳洲精選採購清單」PDF 整理。點縮圖可以放大；商品圖片取自 Chemist Warehouse、PChome 24h、Pak'nSave 的商品頁，各自註明來源，僅供現場辨識包裝、非商業使用，著作權屬原網站與品牌。Jurlique 官網暫時無法讀取，先連到 Google 圖片搜尋。打勾和行程卡片同步，按上方「重設清單」也會一起清除</span></div></section>
     <section><h3>🧾 退稅 TRS</h3><ul>
