@@ -306,12 +306,12 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- 景點圖片清單：images/images.js（換圖說明見 README） -->
-<script src="images/images.js?v=20261110c"></script>
+<script src="images/images.js?v=20261110e"></script>
 <!-- 各地點歷年 10、11 月平均：data/climate.js（由 tools/build_climate.py 產生） -->
-<script src="data/climate.js?v=20261110c"></script>
+<script src="data/climate.js?v=20261110e"></script>
 <!-- 8-bit 像素場景：pixel/scenes.js（原創，以程式繪製） -->
 <!-- 發佈時更新 ?v= 版本號，避免手機瀏覽器用到快取的舊檔 -->
-<script src="pixel/scenes.js?v=20261110c"></script>
+<script src="pixel/scenes.js?v=20261110e"></script>
 <script>
 /* ============ 行程資料 ============ */
 const TYPE = {
@@ -618,7 +618,12 @@ const DAYS = [
 },
 {
   title:'Day 4　蒸汽火車、酒莊、購物', tab:'D4', sub:'丹頓農山',
-  route:'普芬比利蒸汽火車 → 羅奇福德酒莊 → Chadstone 購物中心 → Docklands 晚餐', wx:{loc:'dandenong',notes:['山區比市區稍涼，森林裡較潮濕、下雨機率也較高','坐火車窗邊時風大，帶一件防風外套']},
+  route:'普芬比利蒸汽火車 → 羅奇福德酒莊 → Chadstone 購物中心 → Docklands 晚餐', wx:{loc:'dandenong',notes:['📍 這裡顯示的是丹頓農山的天氣，不是墨爾本市區：山上早晚比市區冷，iPhone 看市區天氣會覺得兩邊差很多','山區比市區稍涼，森林裡較潮濕、下雨機率也較高','坐火車窗邊時風大，帶一件防風外套',
+  '👕 一天會從山上換到購物中心，穿「可以一層層脫掉」的洋蔥式：短袖或薄長袖＋薄毛衣／刷毛＋防風外套',
+  '🚂 早上坐蒸汽火車：全部穿上，森林裡又濕又涼；🍷 中午酒莊：外套可以脫',
+  '🛍 下午 Chadstone：室內有空調，大約 22 度，只穿裡面那層就好；外套收進背包，或摺起來塞進購物袋，逛起來比較輕鬆',
+  '🌊 晚上 Docklands 晚餐在水邊、風大，出商場前把外套穿回去',
+  '👟 一般好走的鞋＋幾張濕紙巾就好，沾到泥點馬上擦掉']},
   items:[
     {...PATRICIA},
     {type:'spot',img:'puffing-billy', px:'puffing-billy', time:'09:45–11:15', drive:'約 45 公里・50–60 分鐘', name:'普芬比利蒸汽火車',gq:'Puffing Billy Railway Belgrave Station',en:'Puffing Billy Railway, Belgrave',ll:[-37.9093,145.3555],
@@ -683,6 +688,7 @@ const DAYS = [
      note:'Jurlique 在澳洲主要在百貨專櫃販售，是否有貨、尺寸以現場為準。'},
     {type:'shop',name:'採買：美麗諾羊毛衛生衣（代買）',gq:'Icebreaker Chadstone',en:'Chadstone 購物中心內：Icebreaker、Macpac',ll:[-37.8858,145.0838],
      short:'兩家都有美麗諾衛生衣（Base Layer），可以比較款式和價格。',products:['merino'],
+     tips:['🧦 可以順便買一兩雙美麗諾羊毛襪，鞋子濕了腳也比較不冷（D6 巴拉瑞特很冷，用得到）'],
      nearTitle:'🏬 門市', near:[
       {name:'Icebreaker Chadstone',gq:'Icebreaker Chadstone',ll:[-37.8858,145.0838],desc:'美麗諾羊毛專門品牌，衛生衣款式最齊、價格偏高。品牌官網門市資料：Shop B-306（舊資料寫 Shop 324，以商場地圖為準）。'},
       {name:'Macpac Chadstone',gq:'Macpac Chadstone',ll:[-37.8866,145.0826],desc:'紐西蘭戶外品牌，有自家美麗諾衛生衣。位於 Lower Ground 樓層。'}
@@ -705,7 +711,7 @@ const DAYS = [
 },
 {
   title:'Day 5　城市漫步與電車', tab:'D5', sub:'巷弄散策',
-  route:'塗鴉巷 → 皇家拱廊 → 咖啡巷弄 → NGV 午餐 → 國立維多利亞美術館 → 聯邦廣場 → 自由逛街', wx:{loc:'mel',notes:['墨爾本號稱「一天有四季」，洋蔥式穿搭最實用','整天步行，帶摺疊傘和好走的鞋']},
+  route:'塗鴉巷 → 皇家拱廊 → 咖啡巷弄 → NGV 午餐 → 國立維多利亞美術館 → 聯邦廣場 → 自由逛街', wx:{loc:'mel',notes:['墨爾本號稱「一天有四季」，洋蔥式穿搭最實用','整天步行，帶摺疊傘和好走的鞋','👟 今晚一定把鞋子弄乾，明天巴拉瑞特很冷（方法見小抄「👟 只帶一雙鞋怎麼辦」）','只帶一雙鞋又不放心：市區的 Target、Rebel 有平價運動鞋和防水噴霧，看天氣再決定']},
   items:[
     {type:'spot',img:'hosier-lane', time:'09:00–10:15', name:'Hosier Lane 塗鴉巷',gq:'Hosier Lane Melbourne',en:'Hosier Lane',ll:[-37.8164,144.9692],
      short:'整條巷子牆面都是街頭藝術，作品幾乎天天更換。',
@@ -785,9 +791,11 @@ const DAYS = [
      note:'Kathmandu 市區門市的資料不夠新（報導提過 Emporium Melbourne、Little Collins St），出發前請用官網門市查詢確認；也可以在官網商品頁查各門市庫存。'},
     {type:'shop',name:'採買：Rebel 運動用品旗艦店',gq:'rebel Emporium Melbourne',en:'Emporium Melbourne 4 樓',ll:[-37.8121,144.9637],
      short:'AFL 球隊帽、球衣。',products:['afl'],
+     tips:['👟 只帶一雙鞋的話：這裡有平價運動鞋和防水噴霧，看天氣再決定要不要買（見小抄「👟 只帶一雙鞋怎麼辦」）'],
      note:'手冊寫的 Swanston St「The AFL Store」查不到現有門市資料，改推 Rebel 旗艦店。'},
     {type:'shop',name:'採買：Target Bourke St',gq:'Target 222 Bourke St Melbourne',en:'222 Bourke St（Target Centre）',ll:[-37.8136,144.9664],
-     short:'遊戲卡牌、平價生活用品。',products:['tcg']},
+     short:'遊戲卡牌、平價生活用品。',products:['tcg'],
+     tips:['👟 只帶一雙鞋的話：這裡有平價運動鞋和防水噴霧，看天氣再決定要不要買（見小抄「👟 只帶一雙鞋怎麼辦」）']},
     {type:'shop',name:'採買：EB Games Melbourne Central',gq:'EB Games Melbourne Central',en:'Melbourne Central（Swanston St 側）',ll:[-37.8102,144.9628],
      short:'遊戲卡牌、電玩周邊。',products:['tcg']},
     {type:'meal',name:'晚餐：逛街方便（每人發放 30 澳幣）',time:'自由用餐',ll:null,short:'自由用餐。',
@@ -797,7 +805,11 @@ const DAYS = [
 },
 {
   title:'Day 6　巴拉瑞特淘金小鎮', tab:'D6', sub:'疏芬山',
-  route:'墨爾本 → 巴拉瑞特疏芬山金礦小鎮 → 墨爾本機場（夜機返台）', wx:{loc:'ballarat',notes:['巴拉瑞特海拔較高（約 430 公尺），白天比墨爾本冷約 3 度，清晨更冷','今晚搭機，把厚外套放隨身行李，機上冷氣強']},
+  route:'墨爾本 → 巴拉瑞特疏芬山金礦小鎮 → 墨爾本機場（夜機返台）', wx:{loc:'ballarat',notes:['📍 這裡顯示的是巴拉瑞特的天氣，不是墨爾本市區，整趟旅程這天最冷，早上可能只有 3～5 度','巴拉瑞特海拔較高（約 430 公尺），白天比墨爾本冷約 3 度，清晨更冷',
+  '🧥 疏芬山是露天的金礦小鎮，整天在戶外走泥土路：穿厚外套（羽絨或鋪棉）、圍巾，裡面加毛衣或刷毛',
+  '☔ 這天下雨機率較高，帶傘或穿防水外套',
+  '🧦 早上穿厚的羊毛襪，備一雙乾襪子放包包',
+  '今晚搭機，把厚外套放隨身行李，機上冷氣強']},
   items:[
     {type:'spot',img:'sovereign-hill', time:'10:00–14:30', drive:'約 115 公里・1 小時 30 分', name:'疏芬山金礦小鎮',gq:'Sovereign Hill Ballarat',en:'Sovereign Hill, Ballarat',ll:[-37.5747,143.8516],
      short:'重現 1850 年代淘金熱的露天博物館，可以親手淘金。',
@@ -1480,6 +1492,14 @@ function renderCheat(){
   <div class="cheat">
     ${fontHTML()}
     ${tripWeatherHTML()}
+    <section><h3>👟 只帶一雙鞋怎麼辦</h3><ul>
+      <li>一雙好走、穿習慣的鞋就夠，重點是<b>多帶幾雙襪子</b>（羊毛或排汗材質），腳濕了中午找廁所換</li>
+      <li>墨爾本 11 月濕度約 50～65%，比台灣乾：流汗悶濕的鞋放一晚通常會乾，被雨淋濕的不一定</li>
+      <li>鞋子濕了：鞋墊抽出來分開晾、鞋裡塞衛生紙或報紙（睡前換一次）、放在冷暖氣出風口附近，或用吹風機冷風吹 10 分鐘</li>
+      <li>鞋子別丟烘衣機，白鞋容易變形、脫膠</li>
+      <li>雨天避開草地和水坑，走有屋簷的騎樓和拱廊</li>
+      <li>真的不放心：D5 市區的 Target、Rebel 有平價運動鞋和防水噴霧，看天氣再決定</li>
+      <li>D6 巴拉瑞特早上只有 3～5 度、整天走戶外：D5 晚上一定把鞋弄乾，D6 穿厚羊毛襪</li></ul></section>
     ${flightEditHTML()}
     <section><h3>💱 匯率換算</h3>
       <div class="cvt"><input id="aud" type="number" value="10" min="0"> 澳幣 ≈ <b id="twd"></b> 台幣
