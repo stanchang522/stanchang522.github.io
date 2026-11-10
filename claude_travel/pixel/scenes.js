@@ -174,7 +174,8 @@
     M: ['10001', '11011', '10101', '10001', '10001'], N: ['110', '101', '101', '101', '101'], O: ['010', '101', '101', '101', '010'],
     P: ['110', '101', '110', '100', '100'], Q: ['010', '101', '101', '110', '011'], R: ['110', '101', '110', '101', '101'],
     S: ['011', '100', '010', '001', '110'], T: ['111', '010', '010', '010', '010'], W: ['10001', '10001', '10101', '11011', '10001'],
-    U: ['101', '101', '101', '101', '111'], V: ['101', '101', '101', '101', '010']
+    U: ['101', '101', '101', '101', '111'], V: ['101', '101', '101', '101', '010'],
+    G: ['011', '100', '101', '101', '011'], D: ['110', '101', '101', '101', '110'], "'": ['1', '1', '0', '0', '0']
   };
   const glyphW = ch => (FONT[ch] ? FONT[ch][0].length : 3) + 1;   // 字寬＋1 格字距（M 較寬）
   function text(c, str, x, y, col){
@@ -417,6 +418,63 @@
     chibi(c, 92, 60, { hair: '#111', shirt: '#2a9d8f', cup: 'coffee' }, Math.floor(t + 1) % 4 === 0, false, 2);
     const wx = 170 - ((t * 9) % 110);
     chibi(c, wx, 62, { hair: '#7a4a2a', shirt: '#ffb703', cup: 'coffee' }, false, Math.floor(t * 6) % 2, 2);
+  }
+
+
+  /* ---------- D2：Pellegrini's Espresso Bar（1954 年老義式咖啡吧） ---------- */
+  function pellegrinis(c, t){
+    // 牆：上半奶油色、下半木頭護牆板
+    R(c, 0, 0, W, 50, '#efe3c8'); R(c, 0, 30, W, 20, '#6b4430'); for(let x = 0; x < W; x += 10) R(c, x, 30, 1, 20, '#55331f');
+    R(c, 0, 29, W, 1, '#3a2418');
+    // 紅色霓虹招牌（偶爾閃一下）
+    const on = Math.floor(t * 3) % 17 !== 0;
+    R(c, 26, 3, 108, 13, '#2a1616'); R(c, 27, 4, 106, 11, '#3a1d1d');
+    const name = "PELLEGRINI'S", nx = 80 - Math.floor(textW(name) / 2);
+    if(on){ text(c, name, nx + 1, 8, '#7a1f1f'); }
+    text(c, name, nx, 7, on ? '#ff5a4f' : '#8a3a36');
+    // 老鏡子與層架（玻璃罐、酒瓶）
+    R(c, 6, 18, 40, 11, '#c8d4d8'); R(c, 7, 19, 38, 9, '#e3ecef'); R(c, 9, 20, 6, 1, '#ffffff');
+    [[112, 20], [112, 26]].forEach(([x, y]) => R(c, x, y, 42, 1, '#55331f'));
+    const jar = ['#d64545', '#ffbe0b', '#2a9d48', '#f4a261', '#8e1b2e', '#e9c46a'];
+    for(let i = 0; i < 9; i++){ R(c, 114 + i * 4, 16 - (i % 2), 3, 4 + (i % 2), jar[i % 6]); R(c, 114 + i * 4, 15 - (i % 2), 3, 1, '#dcdcdc'); }
+    for(let i = 0; i < 9; i++){ R(c, 114 + i * 4, 22, 3, 4, jar[(i + 3) % 6]); }
+    // 義大利三色小旗
+    [['#2a9d48', 52], ['#ffffff', 55], ['#ce2b37', 58]].forEach(([col, x]) => R(c, x, 20, 3, 6, col)); R(c, 51, 19, 1, 9, '#55331f');
+    // 咖啡師（在吧台後面）
+    const pull = Math.floor(t * .7) % 2;
+    chibi(c, 98, 30, { hair: '#222', shirt: '#ffffff' }, false, false, 2);
+    R(c, 100, 44, 12, 6, '#2b2b2b');   // 黑圍裙
+    // 鍍鉻拉桿式咖啡機
+    R(c, 56, 32, 38, 18, '#c9d1d9'); R(c, 57, 33, 36, 16, '#e6ebef'); R(c, 57, 40, 36, 1, '#aab4bd');
+    R(c, 60, 28, 30, 4, '#b8c1c9'); R(c, 72, 24, 6, 4, '#d4a017'); R(c, 70, 22, 10, 2, '#d4a017'); R(c, 74, 20, 2, 2, '#d4a017');   // 頂上金色老鷹裝飾
+    [62, 82].forEach((gx, k) => {
+      R(c, gx, 41, 6, 3, '#8a949d');            // 沖煮頭
+      const down = k === 0 ? pull : 1 - pull;   // 兩支拉桿輪流壓下
+      if(down) line(c, gx + 3, 41, gx + 9, 34, '#2b2b2b'); else line(c, gx + 3, 41, gx + 3, 30, '#2b2b2b');
+      R(c, down ? gx + 8 : gx + 2, down ? 33 : 29, 3, 2, '#1a1a1a');
+      if(down){ R(c, gx + 2, 44, 1, 3 + Math.floor(t * 6) % 2, '#6b3b1f'); }
+      R(c, gx + 1, 47, 4, 3, '#ffffff');        // 小杯 espresso
+    });
+    steam(c, 66, 30, t, 2); steam(c, 86, 30, t + .5, 2);
+    // 吧台：鍍鉻檯面＋紅白檯身
+    R(c, 0, 50, W, 3, '#c9d1d9'); R(c, 0, 50, W, 1, '#ffffff');
+    R(c, 0, 53, W, 13, '#b3262e'); R(c, 0, 58, W, 2, '#f2efe9');
+    // 吧台上的義大利麵、西瓜冰沙（Granita）
+    R(c, 18, 46, 12, 4, '#ffffff'); R(c, 19, 44, 10, 2, '#f2c14e'); R(c, 21, 43, 6, 1, '#d64545'); steam(c, 22, 42, t + .3, 2);
+    R(c, 128, 42, 5, 8, '#dfe6ee'); R(c, 129, 43, 3, 6, '#ff6f91'); R(c, 130, 40, 1, 3, '#2a9d48');
+    // 紅白格子地板
+    for(let y = 66; y < H; y += 6) for(let x = 0; x < W; x += 6) R(c, x, y, 6, 6, ((x + y) / 6) % 2 ? '#c8323a' : '#f4efe6');
+    // 坐在高腳凳上喝咖啡的客人（腳被吧台擋住）
+    const guests = [{ x: 30, p: { hair: '#3b2416', shirt: '#457b9d', cup: 'coffee' } }, { x: 54, p: { hair: '#d9a441', shirt: '#e76f51', cup: 'coffee' } }, { x: 108, p: { hair: '#111', shirt: '#2a9d8f', cup: 'coffee' } }];
+    guests.forEach((g, k) => {
+      const sip = Math.floor(t * 1.1 + k * 1.3) % 3 === 0;
+      chibi(c, g.x, 46, g.p, sip, false, 2);
+      R(c, g.x + 2, 70, 12, 3, '#d64545'); R(c, g.x + 7, 73, 2, 12, '#9aa4ad'); R(c, g.x + 4, 85, 8, 1, '#9aa4ad');   // 紅色高腳凳
+      if(!sip) steam(c, g.x + 15, 58, t + k, 1);
+    });
+    // 推門走進來的客人
+    const wx = 170 - ((t * 8) % 120);
+    if(wx > 74 && wx < 100){} else chibi(c, wx, 60, { hair: '#7a4a2a', shirt: '#ffb703' }, false, Math.floor(t * 6) % 2, 2);
   }
 
   /* ---------- D2：費茲洛花園 庫克船長小屋 ---------- */
@@ -800,6 +858,7 @@
     'queen-vic-market': { name: '維多利亞女王市場', draw: queenVicMarket },
     'market-lane':    { name: 'Market Lane Coffee', draw: marketLane },
     'cooks-cottage':  { name: '庫克船長小屋', draw: cooksCottage },
+    'pellegrinis':    { name: "Pellegrini's Espresso Bar", draw: pellegrinis },
     'parliament':     { name: '維多利亞議會大廈', draw: parliament },
     'princess-theatre': { name: '公主劇院', draw: princessTheatre },
     'chinatown':      { name: '唐人街', draw: chinatown },

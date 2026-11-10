@@ -100,6 +100,9 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 .near b::after{content:"";}
 .near div.go b::after{content:" 📍";font-size:11px}
 .near p{margin:1px 0 0;font-size:12.5px;color:#4b5563}
+.ndist{display:block;font-size:11.5px;font-weight:700;color:#0f766e;margin-top:1px}
+.nstory{margin:5px 0 2px;padding-left:16px;font-size:12.5px;color:#374151;line-height:1.55}
+.nstory li{margin-bottom:3px}
 /* 圖片 */
 .item.has-thumb{padding-right:84px}
 .item .thumb{position:absolute;right:12px;top:12px;width:62px;height:62px;object-fit:cover;border-radius:10px}
@@ -303,12 +306,12 @@ main{display:grid;grid-template-columns:minmax(360px,440px) 1fr;height:calc(100v
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <!-- 景點圖片清單：images/images.js（換圖說明見 README） -->
-<script src="images/images.js?v=20261109e"></script>
+<script src="images/images.js?v=20261110c"></script>
 <!-- 各地點歷年 10、11 月平均：data/climate.js（由 tools/build_climate.py 產生） -->
-<script src="data/climate.js?v=20261109e"></script>
+<script src="data/climate.js?v=20261110c"></script>
 <!-- 8-bit 像素場景：pixel/scenes.js（原創，以程式繪製） -->
 <!-- 發佈時更新 ?v= 版本號，避免手機瀏覽器用到快取的舊檔 -->
-<script src="pixel/scenes.js?v=20261109e"></script>
+<script src="pixel/scenes.js?v=20261110c"></script>
 <script>
 /* ============ 行程資料 ============ */
 const TYPE = {
@@ -456,6 +459,12 @@ const PATRICIA = {
   buy:['☕ 加奶咖啡（White，可選 Flat White）或黑咖啡（Black）','想喝手沖可以點 Filter'],
   tips:['只有平日 7:00–16:00 營業，週末公休','最晚 08:15 回到飯店集合，來回預留 1 小時以上','團體行程中屬於自費、自由參加，出發前告知領隊','早上人多，點完在旁邊等，喝完把杯子放回櫃台'],
   closed:{days:[0,6],msg:'Patricia 週末公休，這天去不了'},
+  extra:[{title:'🕐 為什麼排在 D3、D4 早上？', items:[
+    '它離 D2 的女王市場很近（約 700 公尺），但時間對不上：Patricia 只開平日早上到下午，大約 7:00–16:00，週末公休；D2 到女王市場是 16:15，那時候它已經關門了',
+    'D2 一直在趕路：11:50 才落地，14:00 吃午餐，接著是教堂 → 市場 → 花園，中間沒有空檔另外去喝咖啡',
+    'D5 是週六：那天自由逛街，但剛好遇上它週末公休',
+    '所以整趟行程能去 Patricia 的，只有 D3（週四）和 D4（週五）早上 08:30 集合出發之前，安排成這兩天的「早起選配」：從飯店走路約 25 分鐘，或叫 Uber 5–10 分鐘'],
+    note:'營業時間出發前請用 Google 地圖再確認一次'}],
   near:[
     {name:'Hardware Lane',gq:'Hardware Lane Melbourne',ll:[-37.8130,144.9608],desc:'紅磚步道小巷，就在附近，早上很安靜好拍。'},
     {name:'維多利亞女王市場',gq:'Queen Victoria Market',ll:[-37.8076,144.9568],desc:'步行約 8 分鐘；週一、週三白天休市，週四、週五早上 6 點左右就開始營業。'}
@@ -509,9 +518,9 @@ const DAYS = [
      buy:[],
      tips:['教堂內請保持安靜、脫帽，彌撒進行時不要走動拍照','入內免費'],
      near:[
-      {name:'Pellegrini\'s Espresso Bar',gq:'Pellegrini\'s Espresso Bar Melbourne',ll:[-37.8114,144.9711],desc:'1954 年開業的老義式咖啡吧（66 Bourke St），據說是墨爾本最早使用義式咖啡機的咖啡館之一，紅白格子吧台很有老味道。'},
-      {name:'維多利亞議會大廈',px:'parliament',gq:'Parliament House Melbourne',ll:[-37.8110,144.9737],desc:'19 世紀的古典建築，台階前是熱門拍照點，平日有免費導覽。'},
-      {name:'公主劇院',px:'princess-theatre',gq:'Princess Theatre Melbourne',ll:[-37.8105,144.9727],desc:'1886 年開幕的老劇院，長年上演百老匯音樂劇。'},
+      {name:'Pellegrini\'s Espresso Bar',px:'pellegrinis',gq:'Pellegrini\'s Espresso Bar Melbourne',ll:[-37.8114,144.9711],desc:'1954 年開業的老義式咖啡吧（66 Bourke St），據說是墨爾本最早使用義式咖啡機的咖啡館之一，紅白格子吧台很有老味道。'},
+      {name:'維多利亞議會大廈',px:'parliament',gq:'Parliament House Melbourne',ll:[-37.8110,144.9737],desc:'19 世紀的古典建築，台階前是熱門拍照點，平日有免費導覽。', story:['📜 歷史：1856 年開始興建，分好幾期蓋到 1929 年，原本設計的大圓頂到現在都沒有蓋','🇦🇺 冷知識：1901 年澳洲聯邦成立後，坎培拉還沒建好，這裡當了 26 年的「澳洲國會」（1901～1927）','📸 為什麼大家來拍：一整排高大的古典石柱和長長的階梯，從 Spring St 對面往上拍最有氣勢；晚上打燈也很漂亮','❤️ 在地人：階梯前是市民集會、遊行最常聚集的地方，也常有新人來拍婚紗；不開議的平日有免費導覽，可以看到金碧輝煌的議事廳']},
+      {name:'公主劇院',px:'princess-theatre',gq:'Princess Theatre Melbourne',ll:[-37.8105,144.9727],desc:'1886 年開幕的老劇院，長年上演百老匯音樂劇。', story:['📜 歷史：1854 年這裡就有劇場，1886 年改建成現在法國第二帝國風格的建築，是墨爾本最古老、還在使用的劇院之一','👻 鬼故事：1888 年男中音 Federici 演完歌劇《浮士德》的魔鬼角色，從舞台活板門下降時心臟病發過世，之後傳說他常在劇院出現；據說首演夜會為他留一個空位','🎭 演過什麼：《歌劇魅影》《悲慘世界》、近年的《哈利波特：被詛咒的孩子》等大型音樂劇都在這裡長期演出','📸 為什麼大家來拍：華麗的白色立面、頂上的雕飾和夜晚亮起的招牌燈，就在議會大廈旁邊，可以一起拍']},
       {name:'唐人街 Little Bourke St',px:'chinatown',gq:'Chinatown Melbourne',ll:[-37.8115,144.9680],desc:'西方世界最古老的唐人街之一，牌樓與中式餐館林立。'}
      ]},
     {type:'spot',img:'queen-vic-market', px:'queen-vic-market', time:'16:15–17:00', drive:'約 10 分鐘', name:'維多利亞女王市場',gq:'Queen Victoria Market',closed:{days:[1,3],msg:'女王市場週一、週三白天休市。部分年份 11 月中起週三晚上有夏季夜市，請先查官網'},en:'Queen Victoria Market',ll:[-37.8076,144.9568],
@@ -532,17 +541,19 @@ const DAYS = [
      ]},
     {type:'shop',name:'採買：Market Lane Coffee 女王市場店',px:'market-lane',gq:'Market Lane Coffee 462 Queen St Melbourne',en:'462 Queen St（市場 Mercat Cross 建築）',ll:[-37.8068,144.9577],
      short:'Market Lane 聯名隨行杯、新鮮烘焙咖啡豆。',products:['marketlane'],
-     note:'⚠️ 依行程抵達時店可能已打烊，買不到可以等 D5 去 Collins St 店（只有平日營業）。手冊寫的 Therry St 轉角舊店已經關閉，現在搬到 Queen St。'},
+     note:'⚠️ 依行程抵達時店可能已打烊，買不到可以等 D5 去 Collins St 店（只有平日營業）。手冊寫的 Therry St 轉角舊店已經關閉，現在搬到 Queen St。',
+     extra:[{title:'📖 Market Lane 的故事', items:['📜 歷史：2009 年在 Prahran Market（帕蘭市場）旁的小巷開出第一家店，店名就是那條巷子 Market Lane。創辦人主張「咖啡是季節性的農產品」，跟著產季換豆子','☕ 特色：專做淺焙的單一產區豆，強調喝得出水果、花香的原味；包裝上會寫清楚產區、農場和處理法，也公開向農民收購的價格','❤️ 在地人為什麼喜歡：品質穩定、店員會用心介紹豆子；店面簡約明亮，菜單只有咖啡和少量點心，是墨爾本咖啡迷公認的「精品咖啡標竿」之一','📸 拍照點：白色極簡店面配上木吧台，加上印有 Market Lane 字樣的牛皮紙咖啡豆袋，很多人買了豆子就在吧台前拍一張'], note:'女王市場這家店在 Mercat Cross 老建築裡，紅磚和拱窗也很好拍'}]},
     {type:'spot',img:'fitzroy-gardens', px:'cooks-cottage', time:'17:15–18:00', drive:'約 10 分鐘', name:'費茲洛花園',gq:'Fitzroy Gardens Melbourne',en:'Fitzroy Gardens',ll:[-37.8130,144.9800],
      short:'英式庭園，有庫克船長小屋、精靈樹和溫室花房。',
      intro:'費茲洛花園建於 1848 年，步道規劃成英國國旗「米字型」圖案。園內最有名的是庫克船長小屋 (Cooks\' Cottage)，這是庫克船長父母在英國的老家，1934 年被一磚一瓦拆下運到墨爾本重建。',
      see:['庫克船長小屋（Cooks\' Cottage）及英式香草花園','精靈樹 (Fairies\' Tree)：樹幹上雕滿精靈和澳洲動物','溫室花房 (Conservatory)：依季節更換花展','參天的榆樹林蔭大道，秋天（3～5 月）轉黃最美'],
      buy:[],
      tips:['庫克船長小屋入內需購票，從外面拍照免費','草地上常見負鼠 (possum)，請不要餵食'],
+     extra:[{title:'🏠 庫克船長小屋：從英國整棟搬來的房子', items:['📜 歷史：小屋 1755 年建在英國約克郡的 Great Ayton 小鎮，是英國航海家詹姆斯．庫克（James Cook）的父母家。庫克在 1770 年航行到澳洲東岸，替英國宣示主權，是澳洲歷史課本一定會提到的人物','🚢 搬家故事：1933 年屋主要賣房子，墨爾本富商 Russell Grimwade 買下，把整棟房子拆成一塊塊磚石，編號裝進 253 個木箱和 40 個木桶，用船運到墨爾本，1934 年照原樣蓋回來，送給墨爾本慶祝建城一百週年','🏆 冷知識：它比澳洲任何本地建築都老，常被稱為「澳洲最古老的房子」；門口的常春藤據說是從英國原屋剪枝帶來種的','📸 為什麼大家來拍：石牆、木門、矮窗加上一整片英式香草花園，像童話裡的英國鄉村小屋，背景又是現代都市，反差很好拍','💬 另一面：對澳洲原住民來說，庫克代表殖民的開始，所以小屋近年在澳洲日（1/26）前後曾被抗議塗鴉，是在地很有討論度的地方']},{title:'🧚 精靈樹：雕在老樹幹上的童話', items:['📜 歷史：一棵約 300 年的老紅膠樹倒下後留下的樹樁，雕刻家 Ola Cohn（澳洲早期知名女雕塑家）從 1931 到 1934 年一個人慢慢雕完，完成後送給「墨爾本的孩子們」','🔍 找找看：樹幹上有精靈、小矮人、仙女，也藏著無尾熊、袋鼠、鴯鶓、負鼠等澳洲動物，很適合和小朋友比賽誰先找到','❤️ 在地人為什麼喜歡：很多墨爾本人小時候都被爸媽帶來看過，是好幾代人的共同回憶；樹上的顏色每隔一段時間會重新上漆維護','📸 拍照：樹不大、細節多，建議蹲低用直式近拍，或請小朋友站在樹旁邊指著自己找到的動物']},{title:'🌳 榆樹林蔭大道：全世界少見的老榆樹', items:['📜 歷史：1860～1880 年代從英國引進種下英國榆樹，排成整齊的步道，形成像綠色隧道一樣的林蔭','🌍 為什麼珍貴：20 世紀「荷蘭榆樹病」讓歐洲和北美大量的老榆樹死掉，而澳洲因為隔離檢疫嚴格沒有這種病，墨爾本成了全世界保留最多成熟老榆樹的城市之一','📸 為什麼大家來拍：樹冠在頭頂交會成拱廊，站在步道中間往前拍，會有一路延伸的對稱效果；11 月正是春末，枝葉最茂密翠綠','❤️ 在地人：下班散步、跑步、遛狗、在樹下野餐，是市中心旁邊最受歡迎的綠地之一']}],
      near:[
       {name:'墨爾本板球場 MCG',gq:'Melbourne Cricket Ground',ll:[-37.8200,144.9834],desc:'可容納 10 萬人的運動聖地，澳式足球 (AFL) 季賽氣氛超熱烈。'},
       {name:'財政花園',gq:'Treasury Gardens Melbourne',ll:[-37.8140,144.9755],desc:'緊鄰費茲洛花園，有甘迺迪紀念碑。'},
-      {name:'精靈樹',gq:'Fairies Tree Fitzroy Gardens',ll:[-37.8133,144.9807],desc:'1930 年代雕刻家在老樹幹上雕的童話世界，小朋友最愛。'}
+      {name:'精靈樹',gq:'Fairies Tree Fitzroy Gardens',ll:[-37.8133,144.9807],desc:'1930 年代雕刻家在老樹幹上雕的童話世界，小朋友最愛（故事見上方「精靈樹」卡片）。'}
      ]},
     {type:'meal',name:'晚餐：德國豬腳餐（含一杯啤酒）',px:'meal-knuckle',time:'18:45–20:00',ll:null,short:'旅行社未公布店家。',
      note:'可以試試澳洲在地啤酒，像 Victoria Bitter (VB)、Carlton Draught 都是墨爾本本地品牌。'},
@@ -577,7 +588,8 @@ const DAYS = [
     {type:'shop',name:'採買：ST. ALi 總店（視時間）',gq:'ST. ALi 12-18 Yarra Pl South Melbourne',en:'12-18 Yarra Pl, South Melbourne',ll:[-37.8323,144.9583],
      drive:'距午餐餐廳約 5–8 分鐘',short:'眼罩天使 Logo 隨行杯、咖啡豆。',products:['stali'],
      tips:['手冊建議午餐前後順路去，但沒有排進正式時間表，能不能去要看當天時間，可以先問領隊'],
-     note:'ST. ALi 總店本身也是熱門咖啡館，可以順便喝一杯。'},
+     note:'ST. ALi 總店本身也是熱門咖啡館，可以順便喝一杯。',
+     extra:[{title:'📖 ST. ALi 的故事', items:['📜 歷史：2005 年在 South Melbourne 一間不起眼的倉庫裡開幕，是墨爾本「第三波精品咖啡」的先鋒之一，自己烘豆，也把豆子批發給很多咖啡館','☕ 特色：店內就有烘豆機，空氣裡都是咖啡香；除了義式咖啡，也做手沖和冷萃，常推出不同產區的限定豆','❤️ 在地人為什麼喜歡：這裡也是有名的早午餐（brunch）店，週末常常要排隊；工業風倉庫空間加上熱鬧的氣氛，很有墨爾本「藏在巷子裡的好店」的味道','📸 拍照點：店在小巷裡，入口低調，找到它的那一刻就很有尋寶感；戴眼罩天使 Logo 的咖啡杯、咖啡袋是大家必拍的']}]},
     {type:'spot',img:'maru-koala', time:'14:30–16:30', drive:'約 95 公里・1 小時 20 分', name:'Maru 澳式無尾熊動物園',gq:'Maru Koala and Animal Park Grantville',en:'Maru Koala & Animal Park, Grantville',ll:[-38.4167,145.5250],
      short:'近距離看無尾熊、親手餵袋鼠的小型動物園。',
      intro:'Maru 位於前往菲利普島的路上 (Grantville)，規模不大但很親近動物。園區的袋鼠、沙袋鼠都是放養，可以買飼料直接餵；無尾熊、袋熊、澳洲野犬等原生動物都看得到。',
@@ -1201,6 +1213,19 @@ function bindWx(){
 
 // 自訂資訊卡（例如蒸汽火車的座位攻略）
 function extraHTML(x, cls){ return `<div class="${cls}">${listItems(x.items, esc(x.title))}${x.note?`<p class="exnote">＊${esc(x.note)}</p>`:''}</div>`; }
+// 附近景點：與所屬行程點的距離（直線距離 ×1.3 估實際路程，步行每分鐘約 75 公尺）
+function nearDist(it, x){
+  if(!it.ll || !x.ll) return '';
+  const rad = d => d * Math.PI / 180, [a1, o1] = it.ll, [a2, o2] = x.ll;
+  const h = Math.sin(rad(a2 - a1) / 2) ** 2 + Math.cos(rad(a1)) * Math.cos(rad(a2)) * Math.sin(rad(o2 - o1) / 2) ** 2;
+  const m = 6371000 * 2 * Math.asin(Math.sqrt(h)) * 1.3;
+  const dist = m < 1000 ? `${Math.max(50, Math.round(m / 50) * 50)} 公尺` : `${(m / 1000).toFixed(1)} 公里`;
+  const min = Math.max(1, Math.round(m / 75));
+  const how = m > 3000 ? `建議搭車（步行約 ${Math.round(min / 10) * 10} 分鐘）` : `步行約 ${min} 分鐘`;
+  const from = it.distName || it.name.replace(/^(採買|午餐|晚餐)：/, '');
+  return `<span class="ndist">🚶 距${/^[A-Za-z]/.test(from) ? ' ' : ''}${esc(from)} 約 ${dist}・${how}</span>`;
+}
+function nearStory(x){ return x.story&&x.story.length ? `<ul class="nstory">${x.story.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>` : ''; }
 function listItems(lst,title,cls=''){ return lst&&lst.length?`<h4>${title}</h4><ul class="${cls}">${lst.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''; }
 
 /* ============ 每日行程：卡片模式（左右滑動＋下方詳細內容）／列表模式 ============ */
@@ -1248,7 +1273,7 @@ function bodyHTML(it, i){
   const prods = (it.products||[]).map(productHTML).join('');
   const hasDetail = it.intro||it.note||it.order||prods||(it.tips&&it.tips.length)||(it.see&&it.see.length)||(it.near&&it.near.length);
   if(!hasDetail) return '';
-  const near = (it.near||[]).map((x,j)=>`<div class="${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`).join('');
+  const near = (it.near||[]).map((x,j)=>`<div class="${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b>${nearDist(it,x)}<p>${esc(x.desc)}</p>${nearStory(x)}${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`).join('');
   return `<div class="detail">
     ${photoFig(it)}${pixelHTML(it)}
     ${it.intro?`<div>${esc(it.intro)}</div>`:''}
@@ -1285,7 +1310,7 @@ function colHTML(it, i, num){
     .forEach(([lst, title]) => { if(lst && lst.length) cards.push(`<div class="cardx">${listItems(lst, title)}</div>`); });
   if(it.near && it.near.length){
     cards.push(`<div class="nearlabel">${esc(it.nearTitle||'📍 附近有趣的地方')}</div>`);
-    it.near.forEach((x,j) => cards.push(`<div class="cardx ${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b><p>${esc(x.desc)}</p>${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`));
+    it.near.forEach((x,j) => cards.push(`<div class="cardx ${x.ll?'go':''}" data-near="${i}-${j}"><b>${esc(x.name)}</b>${nearDist(it,x)}<p>${esc(x.desc)}</p>${nearStory(x)}${pixelHTML(x)}${gmapBtn(x.gq,true)}</div>`));
   }
   if(it.note) cards.push(`<div class="cardx notecard">${esc(it.note)}</div>`);
   const closed = closedHTML(it); if(closed) cards.unshift(closed);

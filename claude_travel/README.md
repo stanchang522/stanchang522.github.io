@@ -56,7 +56,7 @@
 - 目前 19 個場景：
   - 重點店家：`chemist-warehouse`（紅黃招牌、滿滿貨架、閃爍價格牌、提著購物籃的小人）
   - D1：`plane-meal`（夜間機艙：吃飛機餐、戴眼罩睡覺冒 Zzz、空服員推餐車）、`arrival`（抵達大廳 WELCOME TO MELBOURNE：推行李推車、沒睡好的小人、打哈欠）
-  - D2：`meal-pasta`（義大利分享餐）、`st-patricks`（聖派翠克大教堂）、`queen-vic-market`（女王市場）、`market-lane`（Market Lane Coffee 紅磚老建築轉角店＋門口喝咖啡的小人）、`cooks-cottage`（費茲洛花園 庫克船長小屋）、`meal-knuckle`（德國豬腳＋啤酒）
+  - D2：`meal-pasta`（義大利分享餐）、`st-patricks`（聖派翠克大教堂）、`queen-vic-market`（女王市場）、`market-lane`（Market Lane Coffee 紅磚老建築轉角店＋門口喝咖啡的小人）、`cooks-cottage`（費茲洛花園 庫克船長小屋）、`pellegrinis`（聖派翠克附近 Pellegrini's：紅色霓虹招牌、拉桿咖啡機、紅白格子地板）、`meal-knuckle`（德國豬腳＋啤酒）
   - D2 附近景點（放在「附近有趣的地方」卡片裡）：`parliament`（議會大廈：柱廊、國旗、經過的電車）、`princess-theatre`（公主劇院：跑馬燈招牌）、`chinatown`（唐人街：牌樓、紅燈籠）
   - D3：`brighton-boxes`（沙灘小屋＋海浪＋海鷗）、`meal-steak`（Meat & Wine Co. 牛排，套用餐廳場景、木頭長桌）、`bbq`（傍晚海邊戶外烤肉：廚師翻肉冒煙、野餐桌舉啤酒、小燈泡串）、`penguin-parade`（夕陽＋企鵝隊伍上岸）、`gp-circuit`（附近景點：靠海的賽道、看台、方格旗、賽車與重機呼嘯而過）
   - D5 附近（塗鴉巷）：`photo-booth`（Flinders St 車站復古黑白拍貼機：一排時鐘、布簾閃光四下、四格照片滑出來）
@@ -145,6 +145,8 @@
 - `PRODUCTS` 可有 `img`／`src`／`url`（單張）或 `pimgs`（多張，每張有品名、來源、連結）：Chemist Warehouse 的魚油／兒童 DHA／木瓜霜（Chemist Warehouse 商品頁）、美麗諾（PChome 示意圖）、AFL 隊帽（New Era 澳洲官網）有圖；Market Lane、Frank Green 官網限流，暫時只有連結。新增 `frankgreen`（Frank Green 潮流保溫杯，手冊推薦，放在 D4 Chadstone 購物焦點）
 - `ORDER` 每項可有 `img`（商品圖路徑）、`src`（圖片來源名稱）、`url`（來源頁，也是「看商品圖」連結）
 - `ORDER`／`ORDER_STORES`／`ORDER_NOTES`：精選採購清單（依「澳洲精選採購清單.pdf」），`store` 是在哪裡買（pharmacy／aesop／jurlique／super）。行程項目加 `order:'pharmacy'` 等，卡片就會列出該店要買的品項（打勾與小抄同步，存在 `mel_bought`）
+- 附近景點會自動顯示「🚶 距○○ 約 X 公尺・步行約 Y 分鐘」：用兩點經緯度算直線距離 ×1.3 估實際路程、每分鐘 75 公尺（`nearDist`）；超過 3 公里改成「建議搭車」。是估計值，實際以 Google 地圖為準。行程點可加 `distName` 自訂顯示名稱
+- 附近景點可加 `story:[...]`：在簡介下方多列幾點歷史故事、拍照理由（例如議會大廈、公主劇院）。費茲洛花園的庫克小屋、精靈樹、榆樹大道，以及 Market Lane、ST. ALi 的故事放在各自卡片的 `extra`
 - `nearTitle`：自訂「附近有趣的地方」標題（例如美麗諾採買卡用「🏬 門市」）
 - `timeNote`：當天的時間說明（目前只有 D2）
 - 每天標題旁顯示當地日期與星期（依出發日期推算）。項目可加 `closed:{days:[星期], msg}`（0＝日），那天剛好休市就顯示紅色警告：目前女王市場（週一、三）、Market Lane Collins St 店（週六、日）
