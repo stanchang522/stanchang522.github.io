@@ -2,7 +2,7 @@
 (function(){
 const D = window.LSP_DATA;
 const KEY = 'lsp_v2_demo_state';
-const VER = 5;
+const VER = 7;   // 6：組別、技能一開始是空的，由店長設定
 const DEFAULT_TASKS = [
   {name:'管理',     color:'#9cc2ff'},
   {name:'值班',     color:'#c6dcff'},
@@ -50,12 +50,14 @@ function defaultReq(){
 function leaveReqs(){ // 每人 2 天劃休（從 1 月推估班表的休假日挑 2 天）
   const base=mapFromNov(NEXT), out={};
   D.employees.forEach((e,i)=>{ const off=base[e.id].map((c,j)=>c==='休'?j+1:0).filter(Boolean);
-    const a=off[i%off.length], b=off[(i+2)%off.length]; out[e.id]=[...new Set([a,b])].sort((x,y)=>x-y); });
+    const a=off[i%off.length], b=off[(i+2)%off.length]; out[e.id]=[...new Set([a,b])].sort((x,y)=>x-y);
+    if(i%9===4) out[e.id]=out[e.id].slice(0,1);      // 示範：有人只劃 1 天
+    if(i%13===7) out[e.id]=[]; });                    // 示範：有人還沒劃
   return out;
 }
 function freshState(){
   const nov={}; D.employees.forEach(e=>nov[e.id]=e.sched.slice());
-  const skills = {}; D.employees.forEach(e=>skills[e.id]=e.skills.slice());
+  const skills = {}, empGroup = {}; D.employees.forEach(e=>{ skills[e.id]=[]; empGroup[e.id]=''; });  // 一開始空白，店長在「員工技能」先選組別再選技能
   const shifts = {}; Object.entries(D.shifts).forEach(([c,s])=>shifts[c]={...s});
   const mk=(sched,status)=>({generated:!!sched, status, sched:sched||{}, changed:{}, dayPlans:{}});
   return {
@@ -64,10 +66,12 @@ function freshState(){
     target: Math.round(D.store.budget*0.95),
     leave:{ phase:'setting', days:2, noLeave:[], reqs:leaveReqs(), returned:{}, special:{} },
     tasks: DEFAULT_TASKS.map(t=>({...t})),
-    skills, shifts, shiftNames:{},
+    skills, empGroup, shifts, shiftNames:{},
     staffing: D.staffing.map(s=>({...s})), staffMode:'table', req: defaultReq(),
     storeInfo:{open:D.store.open, close:D.store.close, bizStart:D.store.bizStart, bizEnd:D.store.bizEnd,
       peak1:'11:00~13:00', peak2:'17:00~19:30', dc1:'05:30', dc2:'13:00', fresh:'06:00'},
+    unavail: { [D.employees[1].id]:[{d:3,a:'12:00',b:'17:30'},{d:4,a:'12:00',b:'17:30'},{d:5,a:'12:00',b:'17:30'}], [D.employees[2].id]:[{d:1,a:'12:00',b:'17:30'}] },  // 不可排班時段（d：1＝週一…0＝週日）
+    prefShift:{}, att:{}, lastView: NOW.key,
     log:[]
   };
 }
@@ -173,13 +177,37 @@ function empFilterBar(){
   return `<div class="empf"><b>看哪些人：</b>${opts.map(([k,t,c],i)=>`${k==='ft'?'<span class="empf-sep"></span>':''}<button class="chip-btn ${f===k?'on':''}" data-empf="${k}">${t} <small>${c}</small></button>`).join('')}</div>`;
 }
 function bindEmpFilter(root){ root.querySelectorAll('[data-empf]').forEach(b=>b.onclick=()=>{ try{ sessionStorage.setItem('lsp_empf',b.dataset.empf); }catch(e){} redraw(); }); }
-function monthBar(onPick){
-  return `<div class="mbar">${MONTHS.map(x=>{ const M=S.months[x.key];
-    const st = !M.generated?'還沒產生':(M.status==='sent'?'已送出':'草稿');
-    return `<button data-mk="${x.key}" class="${x.key===S.cur?'on':''}"><b>${x.y!==NOW.y?x.y+' 年 ':''}${x.m} 月</b><small>${x.tag}・${st}</small></button>`;}).join('')}</div>`;
-}
+/* 班表檢視（過去、本月：看／調班）vs 智能排班（下個月：準備→產生→調整→送出） */
+function isAct(){ return curMon().kind==='next'; }
+function modeTitle(){ return isAct()?'智能排班':'班表檢視'; }
+function modeSeg(){ const act=isAct(); return `<div class="seg big"><button data-mode2="view" class="${act?'':'on'}">📖 班表檢視</button><button data-mode2="act" class="${act?'on':''}">⚡ 智能排班</button></div>`; }
+/* 月份選擇（智能排班、預先排休、出勤檢核共用：位置、字都一樣） */
+const KIND_TXT={past:'過去',now:'本月',next:'下個月'};
+function monthPick(cur, attr, kinds){ kinds=kinds||['past','now','next'];
+  return `<span class="lbl">月份</span><div class="seg mseg">${MONTHS.filter(x=>kinds.includes(x.kind)).map(x=>`<button ${attr}="${x.key}" class="${x.key===cur?'on':''}">${x.y!==NOW.y?x.y+' 年 ':''}${x.m} 月<small>${KIND_TXT[x.kind]}</small></button>`).join('')}</div>`; }
+// 班表檢視：只選過去、本月；智能排班（action）只排下個月，直接顯示月份、不用選
+function monthChips(){ return isAct() ? `<span class="lbl">月份</span><span class="mstatic">${NEXT.y} 年 ${NEXT.m} 月<small>下個月</small></span>` : monthPick(S.cur,'data-mk',['past','now']); }
+function monthBar(){ return `<div class="sh"><div class="sh-r1">${modeSeg()}</div><div class="sh-line" style="margin-bottom:12px">${monthChips()}</div></div>`; }
 function bindMonthBar(root, hash){
-  root.querySelectorAll('.mbar [data-mk]').forEach(b=>b.onclick=()=>{ S.cur=b.dataset.mk; save(); go(hash||location.hash,true); });
+  root.querySelectorAll('[data-mk]').forEach(b=>b.onclick=()=>{ S.cur=b.dataset.mk; if(mon(S.cur).kind!=='next') S.lastView=S.cur; save(); go(hash||location.hash,true); });   // 點 1 月會自動切到「智能排班」
+  root.querySelectorAll('[data-mode2]').forEach(b=>b.onclick=()=>{ const act=b.dataset.mode2==='act'; if(act===isAct()) return;
+    S.cur = act?NEXT.key:(S.lastView||NOW.key); save(); const h=location.hash.startsWith('#/day')?'#/day':'#/month'; go(h,false); window.scrollTo(0,0); });
+}
+/* 班別時數標記：(8+1)＝工時 8 小時＋休息 1 小時 */
+function hrsTag(code){ const sp=span(code); if(!sp) return ''; const br=breakH(sp); return `(${+(sp-br).toFixed(2)}+${br})`; }
+/* 右上齒輪：字體大小（存在這台電腦） */
+const FONT_SIZES=[['s','小',0.85],['m','標準',1],['l','大',1.15],['xl','特大',1.3]];
+function fontKey(){ try{ return localStorage.getItem('lsp_font')||'m'; }catch(e){ return 'm'; } }
+function zoomF(){ return parseFloat(document.body.style.zoom)||1; }   // 拖拉時把螢幕座標換回版面座標
+function applyFont(){ const f=FONT_SIZES.find(x=>x[0]===fontKey())||FONT_SIZES[1]; document.body.style.zoom=f[2]===1?'':f[2]; }
+function renderGear(){
+  if(document.getElementById('gear')) return;
+  const g=document.createElement('div'); g.id='gear'; document.body.appendChild(g);
+  const draw=open=>{ const k=fontKey(); g.innerHTML=`<button class="gear-btn" title="設定" aria-label="設定">⚙️</button>${open?`<div class="gear-pop"><div class="b" style="margin-bottom:8px">字體大小</div><div class="gear-opts">${FONT_SIZES.map(([id,t])=>`<button data-font="${id}" class="${k===id?'on':''}" style="font-size:${{s:15,m:18,l:21,xl:24}[id]}px">${t}</button>`).join('')}</div><div class="muted" style="font-size:14px;margin-top:8px">只改這台電腦，其他人不受影響。</div></div>`:''}`;
+    g.querySelector('.gear-btn').onclick=ev=>{ ev.stopPropagation(); draw(!open); };
+    g.querySelectorAll('[data-font]').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); try{ localStorage.setItem('lsp_font',b.dataset.font); }catch(e){} applyFont(); draw(true); }); };
+  draw(false);
+  document.addEventListener('click',ev=>{ if(!g.contains(ev.target) && g.querySelector('.gear-pop')) draw(false); });
 }
 
 /* ---------- 側欄與路由 ---------- */
@@ -225,7 +253,12 @@ const routes = {};
 function route(path, fn){ routes[path]=fn; }
 let lastHash='';
 // keep=true：同一頁重畫，保留捲動位置（點設定不會跳回上面）
+/* 員工組別可以由店長改（存在 S.empGroup），每次畫面前套到員工資料上 */
+function applyGroups(){ const g=S.empGroup||{}; D.employees.forEach(e=>{ if(e.group0===undefined) e.group0=e.group; e.group=(e.id in g)?g[e.id]:e.group0; }); }
+/* 帶入範例：組別、技能照原始資料（示範用） */
+function fillSample(){ D.employees.forEach(e=>{ S.empGroup[e.id]=e.group0; S.skills[e.id]=e.skills.slice(); }); Object.values(S.months).forEach(M=>M.dayPlans={}); applyGroups(); save(); }
 function go(hash, keep){
+  applyGroups();
   let r = (hash||'').replace(/^#/,'') || '/month';
   if(S.role==='hq' && !r.startsWith('/hq')) { S.role='store'; save(); }
   if(S.role==='store' && r.startsWith('/hq')) { S.role='hq'; save(); }
@@ -245,8 +278,8 @@ const redraw = ()=>go(location.hash, true);
 window.addEventListener('hashchange',()=>go(location.hash));
 
 window.LSP = {D, get S(){return S;}, save, log, tm, fmt, span, netH, breakH, isWork, shiftOf, dow, DOW, emp,
-  empF, empFilterFn, empFilterBar, bindEmpFilter,
+  fillSample, empF, empFilterFn, empFilterBar, bindEmpFilter,
   laborCheck, monthHours, totalHours, $, h, esc, modal, toast, taskColor, route, go, redraw, SKILLS,
-  MONTHS, NEXT, NOW, mon, curMon, curM, prevM, today, todayStr, monthBar, bindMonthBar, mapFromNov, SLOT0, NSLOT,
-  start(){ load(); go(location.hash||'#/month'); }};
+  MONTHS, NEXT, NOW, mon, curMon, curM, prevM, today, todayStr, monthBar, modeSeg, monthChips, monthPick, KIND_TXT, bindMonthBar, isAct, modeTitle, hrsTag, zoomF, mapFromNov, SLOT0, NSLOT,
+  start(){ load(); applyFont(); renderGear(); go(location.hash||'#/month'); }};
 })();

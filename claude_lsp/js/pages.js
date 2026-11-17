@@ -13,12 +13,17 @@ function stepper(steps, cur){
     const cls = i<cur?'done':(i===cur?'cur':''); const dot = i<cur?'✓':(i+1);
     return `<div class="st ${cls}"><div class="dot">${dot}</div>${s}${i===cur?'（現在）':''}</div>`;}).join('')}</div>`;
 }
-const statusPill = (M,mm) => mm.kind==='past'?'<span class="pill sent">已結束（只能看）</span>':(M.status==='sent'?'<span class="pill sent">已送出（唯讀）</span>':(M.status==='saved'?'<span class="pill saved">草稿（已存檔）</span>':'<span class="pill draft">草稿（還沒存檔）</span>'));
+const statusPill = (M,mm) => mm.kind==='past'?'<span class="pill sent">已結束・只能看</span>':(M.status==='sent'?'<span class="pill sent">已送出・只能看</span>':(M.status==='saved'?'<span class="pill saved">草稿・已存檔</span>':'<span class="pill draft">草稿・還沒存檔</span>'));
 function schedTabs(cur){
   return `<div class="tabs"><button data-h="#/month" class="${cur==='m'?'on':''}">月班表</button><button data-h="#/day" class="${cur==='d'?'on':''}">日作業表</button></div>`;
 }
-function bindTabs(main){ main.querySelectorAll('.tabs button[data-h]').forEach(b=>b.onclick=()=>location.hash=b.dataset.h); }
-L.schedTabs=schedTabs; L.bindTabs=bindTabs; L.statusPill=statusPill; L.SPECIAL=SPECIAL;
+function bindTabs(main){ main.querySelectorAll('button[data-h]').forEach(b=>b.onclick=()=>location.hash=b.dataset.h); }
+/* 班表上方精簡工具列（照 GPT 版）：第 1 列 模式＋月／日切換；第 2 列 左：月份、顯示、看哪些人；右：按鈕＋數字 */
+function schedHead(cur, o){ o=o||{};
+  return `<div class="sh"><div class="sh-r1">${L.modeSeg()}<div class="spacer"></div><div class="seg big">${[['m','#/month','📅 月班表'],['d','#/day','🕘 日作業表']].map(([k,h,t])=>`<button data-h="${h}" class="${cur===k?'on':''}">${t}</button>`).join('')}</div></div>
+  <div class="sh-r2"><div class="sh-left"><div class="sh-line">${L.monthChips()}${o.line1||''}</div>${o.line2||''}</div>
+    <div class="sh-right">${o.right?`<div class="sh-btns">${o.right}</div>`:''}${o.kpi?`<div class="sh-kpi">${o.kpi}</div>`:''}</div></div>${o.note?`<div class="sh-note">${o.note}</div>`:''}</div>`; }
+L.schedTabs=schedTabs; L.schedHead=schedHead; L.bindTabs=bindTabs; L.statusPill=statusPill; L.SPECIAL=SPECIAL;
 function cellText(c){ return SPECIAL[c]||c||''; }
 L.cellText=cellText;
 
@@ -72,7 +77,7 @@ function prepPage(main){
   };
 }
 route('/schedule',(main)=>{ L.S.cur=NX.key; L.save();
-  main.innerHTML=`<div class="top"><h2>智能排班</h2><span class="muted">準備 ${NX.y} 年 ${NX.m} 月</span></div>${L.monthBar()}`;
+  main.innerHTML=`<div class="top"><h2>${L.modeTitle()}</h2><span class="muted">準備 ${NX.y} 年 ${NX.m} 月</span></div>${L.monthBar()}`;
   L.bindMonthBar(main,'#/month'); prepPage(main); });
 
 /* ============ 執行跑班表（產生 1 月） ============ */
@@ -116,12 +121,13 @@ route('/run', (main)=>{
   setTimeout(tick,300);
 });
 
+/* 不可排班時段：回傳衝突的時段文字（沒有就回空） */
+function unavailHit(id, dw, st, en){ const list=(L.S.unavail||{})[id]||[]; let a=L.tm(st), b=L.tm(en); if(b<=a) b+=1440;
+  const h=list.find(u=>u.d===dw && L.tm(u.a)<b && L.tm(u.b)>a); return h?`${h.a}～${h.b}`:''; }
 /* ============ 月班表 ============ */
 route('/month', (main)=>{
   const S=L.S, mm=L.curMon(), M=L.curM();
-  main.innerHTML=`<div class="top"><h2>智能排班</h2></div>${L.monthBar()}`;
-  L.bindMonthBar(main,'#/month');
-  if(!M.generated){ prepPage(main); return; }
+  if(!M.generated){ main.innerHTML=L.monthBar(); L.bindMonthBar(main,'#/month'); prepPage(main); return; }
   const past = mm.kind==='past', sent = M.status==='sent', ro = past||sent;
   const mode = sessionStorage.getItem('lsp_mode')||'code';
   const issues = L.laborCheck(mm.key);
@@ -142,34 +148,30 @@ route('/month', (main)=>{
       const c=M.sched[e.id][d-1]; const sh=L.shiftOf(c);
       const cls = sh?'':(SPECIAL[c]?'sp':(c==='例'?'rest':(c==='休'?'off':'empty')));
       const k=e.id+'_'+d;
-      const inner = sh ? (mode==='code'?`<div class="c">${c}</div><div class="t">${sh.start}</div>`:`<div style="font-size:13px;font-weight:700">${sh.start}<br>${sh.end}</div>`) : `<div class="c">${cellText(c)}</div>`;
-      return `<td class="cell ${cls} ${errSet.has(k)?'err':(warnSet.has(k)?'wrn':'')} ${M.changed[k]?'chg':''}" data-id="${e.id}" data-d="${d}">${inner}</td>`+(wkEnd(d)?wkCell(e,d,lim):'');
+      const adj = sh && M.adj && M.adj[k], st0 = adj?adj.start:(sh&&sh.start), en0 = adj?adj.end:(sh&&sh.end);
+      const ua = sh && unavailHit(e.id, L.dow(d,mm), st0, en0);
+      const inner = sh ? (mode==='code'?`<div class="c">${c}${adj?'<sup class="adj-m">調</sup>':''}</div><div class="t">${st0}</div>`:`<div style="font-size:13px;font-weight:700">${st0}<br>${en0}${adj?'<sup class="adj-m">調</sup>':''}</div>`)+`<div class="t hrs">${L.hrsTag(c)}</div>` : `<div class="c">${cellText(c)}</div>`;
+      return `<td class="cell ${cls} ${errSet.has(k)?'err':(warnSet.has(k)?'wrn':'')} ${M.changed[k]?'chg':''} ${ua?'ua':''}" data-id="${e.id}" data-d="${d}" ${ua?`title="排到不可排班時段：${ua}"`:''}>${inner}</td>`+(wkEnd(d)?wkCell(e,d,lim):'');
     }).join('');
-    return `<tr><td class="sticky" style="min-width:150px"><b>${esc(e.name)}</b><br><small class="muted">${e.title}・${e.group}</small></td><td><b>${L.monthHours(e.id,mm.key)}</b></td>${cells}</tr>`;
+    return `<tr><td class="sticky" style="min-width:150px"><b>${esc(e.name)}</b><br><small class="muted">${e.title}・${e.group||'未選組別'}</small></td><td><b>${L.monthHours(e.id,mm.key)}</b></td>${cells}</tr>`;
   }).join('');
   function wkCell(e,d,lim){ const h=M.sched[e.id].slice(wkStart(d)-1,d).reduce((a,c)=>a+L.netH(c),0); const full=d-wkStart(d)+1===7;
     return `<td class="wkc ${h>lim?'over':''}" title="${mm.m}/${wkStart(d)}～${mm.m}/${d}${full?'':'（不滿一週）'}，上限 ${lim} 小時">${h}</td>`; }
   const cnt = days.map(d=>EMP.filter(e=>L.isWork(M.sched[e.id][d-1])).length);
   const wkTot = d=>EMP.reduce((a,e)=>a+M.sched[e.id].slice(wkStart(d)-1,d).reduce((x,c)=>x+L.netH(c),0),0);
+  main.innerHTML=schedHead('m',{
+    line1:`${statusPill(M,mm)}<span class="lbl" style="margin-left:10px">顯示</span><div class="seg">${[['code','名稱'],['time','時間']].map(([k,t])=>`<button data-mode="${k}" class="${mode===k?'on':''}">${t}</button>`).join('')}</div>`,
+    line2:`<div class="sh-line">${L.empFilterBar()}</div>`,
+    right:`<button class="btn" id="law">⚖ 勞基法檢核</button>${past?'':(sent?`<button class="btn soft" id="edit">✎ 編輯</button>`:`<button class="btn soft" id="saveD" ${M.status==='saved'?'disabled':''}>💾 儲存草稿</button><button class="btn pri" id="send" ${M.status!=='saved'?'disabled':''}>📤 送出</button>`)}`,
+    kpi:`<div><small>已排班工時</small><b>${n(tot)}</b> hr</div>${mm.kind==='next'?`<div><small>目標</small><b>${n(tgt)}</b> hr</div><div><small>差距</small><b class="${tot<tgt?'bad':''}">${tot-tgt>0?'+':''}${n(tot-tgt)}</b></div>`:''}<div><small>勞基法</small><b class="${block.length?'bad':'okc'}" style="font-size:18px">${block.length?'⚠ '+block.length+' 個問題':'✓ 沒問題'}</b>${issues.length-block.length?`<small>另 ${issues.length-block.length} 個提醒</small>`:''}</div>`,
+    note: past?'這是過去的月份，只能看。':(sent?`已送出，班表是唯讀。${mm.kind==='now'?'要調班':'要修改'}請按右上「✎ 編輯」，改完要再送出。`:'')
+  });
+  L.bindMonthBar(main,'#/month');
   main.insertAdjacentHTML('beforeend',`
-  <div class="top"><h2 style="font-size:26px">${mm.y} 年 ${mm.m} 月班表</h2>${statusPill(M,mm)}<div class="spacer"></div>
-    <button class="btn" id="law">⚖ 勞基法檢核</button>
-    ${past?'':(sent?`<button class="btn soft" id="edit">✎ 編輯</button>`:`<button class="btn soft" id="saveD" ${M.status==='saved'?'disabled':''}>儲存草稿</button><button class="btn pri" id="send" ${M.status!=='saved'?'disabled':''}>送出</button>`)}
-  </div>
-  ${schedTabs('m')}
-  <div class="kpi" style="margin-bottom:12px">
-    <div class="k"><small>已排班工時</small><b>${n(tot)}</b> hr</div>
-    ${mm.kind==='next'?`<div class="k"><small>目標排班工時</small><b>${n(tgt)}</b> hr</div><div class="k"><small>差距</small><b class="${tot<tgt?'bad':''}">${tot-tgt>0?'+':''}${n(tot-tgt)}</b> hr</div>`:''}
-    <div class="k"><small>勞基法</small><b class="${block.length?'bad':'okc'}">${block.length?'⚠ '+block.length+' 個問題':'✓ 沒問題'}</b>${issues.length-block.length?`<small>另有 ${issues.length-block.length} 個提醒</small>`:''}</div>
-    <div class="spacer"></div>
-    <div style="align-self:center">顯示：<button class="btn sm ${mode==='code'?'soft':''}" data-mode="code">班別名稱</button> <button class="btn sm ${mode==='time'?'soft':''}" data-mode="time">時間</button></div>
-  </div>
-  ${L.empFilterBar()}
-  ${past?'<div class="banner blue">這是過去的月份，只能看，不能改。</div>':(sent?`<div class="banner blue">已送出，班表是唯讀。${mm.kind==='now'?'本月要調班':'要修改'}請按右上「✎ 編輯」，班表會回到草稿，改完要再送出。</div>`:'')}
   <div class="tbl-wrap ${ro?'ro':''}"><table class="g"><thead><tr><th class="sticky">姓名</th><th>總工時</th>${head}</tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td class="sticky">上班人數${fl?'<br><small class="muted">（只算篩選的人）</small>':''}</td><td></td>${cnt.map((c,i)=>`<td>${c}</td>`+(wkEnd(i+1)?`<td class="wkc">${n(wkTot(i+1))}</td>`:'')).join('')}</tr></tfoot></table></div>
-  <div class="legend" style="margin-top:10px"><span><i style="background:#ffe9e9"></i>例假</span><span><i style="background:#f3f3f3"></i>休假</span><span><i style="background:#dbe9c4"></i>支援／受訓／育嬰</span><span><i style="background:#fafafa"></i>不排（兼職）</span><span><i style="outline:3px solid var(--bad)"></i>勞基法問題（不能送出）</span><span><i style="outline:3px dashed var(--warn)"></i>提醒</span><span><i style="box-shadow:inset 0 -5px 0 var(--warn)"></i>手動改過</span><span><i style="background:#fff3b0"></i>週工時（正職超過 48、兼職超過 40 變紅）</span></div>
+  <div class="legend" style="margin-top:10px"><span><i style="background:#ffe9e9"></i>例假</span><span><i style="background:#f3f3f3"></i>休假</span><span><i style="background:#dbe9c4"></i>支援／受訓／育嬰</span><span><i style="background:#fafafa"></i>不排（兼職）</span><span><i style="outline:3px solid var(--bad)"></i>勞基法問題（不能送出）</span><span><i style="outline:3px dashed var(--warn)"></i>提醒</span><span><i style="box-shadow:inset 0 -5px 0 var(--warn)"></i>手動改過</span><span><i style="background:#fff3b0"></i>週工時（正職超過 48、兼職超過 40 變紅）</span><span><i style="outline:3px dotted #8a3ffc;outline-offset:-3px"></i>排到不可排班時段</span><span><b style="color:var(--pri)">調</b>出勤檢核調整過的班</span><span>(8+1)＝工時 8 小時＋休息 1 小時</span></div>
   <ul class="note-below">
     <li>上面「看哪些人」可以只看某一組、正職或兼職；上方的已排班工時、勞基法檢核還是算全店。</li>
     <li>點格子可以改班別、休假。每改一格就做第一層勞基法檢查（六休一、每週例假、兩班間隔 11 小時、週工時），有問題只跳提醒、格子框紅，<b>不會擋住</b>。</li>
@@ -202,7 +204,7 @@ function showIssues(list, blocking, mm){
 }
 function pickShift(mm,id,d){
   const S=L.S, M=S.months[mm.key], e=L.emp(id), cur=M.sched[id][d-1];
-  const opts = Object.entries(S.shifts).sort((a,b)=>L.tm(a[1].start)-L.tm(b[1].start)).map(([c,s])=>`<button data-c="${esc(c)}" class="${c===cur?'cur':''}"><b>${esc(c)}</b><small>${s.start}～${s.end}（${L.netH(c)}h）</small></button>`).join('');
+  const opts = Object.entries(S.shifts).sort((a,b)=>L.tm(a[1].start)-L.tm(b[1].start)).map(([c,s])=>`<button data-c="${esc(c)}" class="${c===cur?'cur':''}"><b>${esc(c)}</b><small>${s.start}～${s.end} ${L.hrsTag(c)}</small></button>`).join('');
   modal(`<h3>${esc(e.name)}　${mm.m}/${d}（${L.DOW[L.dow(d,mm)]}）</h3><div class="muted">現在：${cellText(cur)||'不排'}</div>
     <div class="picks">${opts}<button data-c="休" class="${cur==='休'?'cur':''}"><b>休</b><small>休息日</small></button><button data-c="例" class="${cur==='例'?'cur':''}"><b>例</b><small>例假</small></button><button data-c="" class="${cur===''?'cur':''}"><b>不排</b><small>兼職不排班</small></button></div>
     <div style="text-align:right"><button class="btn" data-x>取消</button></div>`,(m,close)=>{
@@ -224,117 +226,57 @@ function sortEmps(list, by){
   return [...list].sort((a,b)=> by==='title' ? (ti(a)-ti(b)||gi(a)-gi(b)) : (gi(a)-gi(b)||ti(a)-ti(b)) );
 }
 
-/* ============ 預先排休（1 月） ============ */
+/* ============ 預先排休（一頁式：左上設定、右上小月曆、下面總表／列表） ============ */
 const OPEN=`${NW.m}/16`, DUE=`${NW.m}/15`, REVIEW=`${NW.m}/26`;
 const LV_STEPS=['店長設定',`員工劃休（${OPEN}～${NW.m}/25）`,'店長審核','確定，帶入跑班表'];
 const PH_IDX={setting:0,review:2,confirmed:4};
-route('/leave', (main, r)=>{
-  const S=L.S, lv=S.leave;
-  const tab = r.includes('review')?'review':(r.includes('setting')?'setting':(lv.phase==='setting'?'setting':'review'));
-  const summary = `${NX.m} 月：每人可休 <b>${lv.days} 天</b>｜不能休 <b>${lv.noLeave.length?fmtDays(lv.noLeave):'無'}</b>`;
-  main.innerHTML=`<div class="top"><h2>預先排休</h2><span class="muted">${NX.y} 年 ${NX.m} 月（下個月）</span><div class="spacer"></div>
-    ${tab==='setting'?'<button class="btn" id="saveSet">儲存</button>':(lv.phase!=='confirmed'?'<button class="btn pri" id="confirm">確定排休</button>':'<span class="pill ok">✓ 排休已確定</span>')}</div>
-    ${stepper(LV_STEPS, PH_IDX[lv.phase])}
-    <div class="tabs"><button data-t="setting" class="${tab==='setting'?'on':''}">① 設定</button><button data-t="review" class="${tab==='review'?'on':''}" ${lv.phase==='setting'?'disabled style="opacity:.5"':''}>② 審核</button>
-      ${tab==='review'?`<span class="note" style="margin-left:12px;color:var(--ink);font-size:17px">${summary}</span><button class="btn sm" id="editSet" style="margin-left:auto">✎ 修改設定</button>`:(lv.phase==='setting'?`<span class="note">（${OPEN} 員工開始劃休後才能用）</span>`:'')}</div>
-    <div id="body"></div>`;
-  main.querySelectorAll('.tabs [data-t]').forEach(b=>b.onclick=()=>{ if(b.dataset.t==='review'&&lv.phase==='setting') return; location.hash='#/leave/'+b.dataset.t; });
-  if(tab==='setting') leaveSetting(main.querySelector('#body'), main); else leaveReview(main.querySelector('#body'));
-  const cf=main.querySelector('#confirm'); if(cf) cf.onclick=()=>{
-    const over=D.employees.filter(e=>reqDays(e.id).length>lv.days);
-    if(over.length && !confirm(`還有 ${over.length} 人劃休超過 ${lv.days} 天（${over.map(e=>e.name).join('、')}），還是要確定嗎？`)) return;
-    lv.phase='confirmed'; L.log('排休',`確定 ${NX.m} 月排休`,'','已確定'); L.save(); L.redraw();
-    toast('排休已確定',`「智能排班 → ${NX.m} 月」準備跑班表的第 4 項已自動打勾。`,'info');
-  };
-  const es=main.querySelector('#editSet'); if(es) es.onclick=()=>modal(`<h3 class="bad">⚠ 員工已經開始劃休了</h3><p style="font-size:19px">改了設定會通知全店員工。已經劃的休如果碰到新的不能休日子，會自動退回。</p>
-    <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn" data-x>取消</button><button class="btn pri" data-ok>確定修改</button></div>`,(m,close)=>{
-      m.querySelector('[data-x]').onclick=close; m.querySelector('[data-ok]').onclick=()=>{ close(); location.hash='#/leave/setting'; };});
-});
-function fmtDays(arr){ const a=[...arr].sort((x,y)=>x-y), m=NX.m, out=[]; for(let i=0;i<a.length;){ let j=i; while(j+1<a.length&&a[j+1]===a[j]+1) j++; out.push(i===j?`${m}/${a[i]}`:`${m}/${a[i]}～${m}/${a[j]}`); i=j+1; } return out.join('、'); }
+function fmtDays(arr,m){ m=m||NX.m; const a=[...arr].sort((x,y)=>x-y), out=[]; for(let i=0;i<a.length;){ let j=i; while(j+1<a.length&&a[j+1]===a[j]+1) j++; out.push(i===j?`${m}/${a[i]}`:`${m}/${a[i]}～${m}/${a[j]}`); i=j+1; } return out.join('、'); }
 function reqDays(id){ const lv=L.S.leave; return (lv.reqs[id]||[]).filter(d=>!lv.returned[id+'_'+d]); }
-function leaveSetting(box, main){
-  const S=L.S, lv=S.leave, sel=new Set(lv.noLeave), mm=NX;
-  const lead=(mm.fd+6)%7, prevDays=31;
-  let cal=['一','二','三','四','五','六','日'].map(x=>`<div class="h">${x}</div>`).join('');
-  for(let i=0;i<lead;i++) cal+=`<div class="o">${prevDays-lead+1+i}</div>`;
-  for(let d=1; d<=mm.days; d++) cal+= sel.has(d)?`<div class="sel" data-d="${d}">${d}<small>不能休</small></div>`:`<div data-d="${d}">${d}</div>`;
-  box.innerHTML=`
-    <div class="banner">⏰ 請在 ${DUE} 前設定好。${OPEN} 起，員工就可以用 App 劃 ${mm.m} 月的休假。</div>
-    <div class="card chk"><div class="no">1</div><div><div class="tt">每人 ${mm.m} 月可以休幾天</div>
-      <div style="display:flex;align-items:center;gap:14px;margin-top:8px"><select class="sel-big" id="days">${[1,2,3,4,5,6].map(x=>`<option ${x===lv.days?'selected':''}>${x}</option>`).join('')}</select><span style="font-size:22px">天</span>
-      <span class="muted">先帶上個月的天數（2 天），可以改。</span></div></div></div>
-    <div class="card chk" style="align-items:flex-start"><div class="no">2</div><div style="flex:1">
-      <div class="tt">${mm.m} 月不能休的日子</div>
-      <div style="display:flex;gap:30px;margin-top:12px;flex-wrap:wrap">
-        <div style="min-width:300px">
-          <div style="display:flex;gap:10px;margin-bottom:14px"><button class="btn ${sel.size?'':'soft'}" id="none">無</button><button class="btn ${sel.size?'soft':''}">選擇日期</button></div>
-          <div class="b" style="margin-bottom:8px">已選的日子：</div>
-          <div class="chips">${sel.size?[...sel].sort((a,b)=>a-b).map(d=>`<span class="chip">${mm.m}/${d}（${L.DOW[L.dow(d,mm)]}）<button data-rm="${d}">✕</button></span>`).join(''):'<span class="muted">還沒選</span>'}</div>
-          <p class="muted">點日曆上的日子就能選或取消，按 ✕ 也能取消。<br>選好的日子，員工在 App 上不能劃休。</p>
-        </div>
-        <div><div class="b" style="text-align:center;font-size:20px;margin-bottom:6px">${mm.y} 年 ${mm.m} 月</div><div class="cal">${cal}</div>
-          <div class="muted" style="margin-top:6px">紅色＝不能休（員工在 App 上那天會反灰、不能劃）</div></div>
-      </div></div></div>
-    <div class="card" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <div style="flex:1;font-size:19px">${mm.m} 月：每人可休 <b>${lv.days} 天</b>｜不能休 <b>${sel.size?fmtDays([...sel]):'無'}</b>
-        <div class="muted" style="font-size:16px">${lv.phase==='setting'?`按下後，${OPEN} 起員工可以在 App 劃休；這一頁會自動換到「② 審核」。`:'已經開放劃休；改了設定按「儲存」就會通知全店。'}</div></div>
-      ${lv.phase==='setting'?'<button class="btn pri big" id="open">送出、開放劃休</button>':''}
-    </div>
-    <ul class="note-below"><li>${DUE} 還沒送出：系統自動沿用上個月的天數，不能休的日子先空著，${OPEN} 照常開放，並通知店長。</li><li>不能休的日子只有店長設定（總部不設定）。</li></ul>`;
-  box.querySelector('#days').onchange=ev=>{ lv.days=Number(ev.target.value); L.save(); L.redraw(); };
-  box.querySelectorAll('.cal [data-d]').forEach(c=>c.onclick=()=>{ const d=Number(c.dataset.d); const i=lv.noLeave.indexOf(d); if(i>=0) lv.noLeave.splice(i,1); else lv.noLeave.push(d); L.save(); L.redraw(); });
-  box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{ lv.noLeave=lv.noLeave.filter(x=>x!==Number(b.dataset.rm)); L.save(); L.redraw(); });
-  box.querySelector('#none').onclick=()=>{ lv.noLeave=[]; L.save(); L.redraw(); };
-  const op=box.querySelector('#open'); if(op) op.onclick=()=>{
-    returnConflicts();
-    lv.phase='review'; L.log('排休','送出、開放劃休',`可休 ${lv.days} 天`,lv.noLeave.length?'不能休 '+fmtDays(lv.noLeave):'不能休：無'); L.save(); location.hash='#/leave/review';
-    toast('已開放劃休',`示範：時間跳到 ${REVIEW}，員工已經劃完，進入「② 審核」。`,'info'); };
-  main.querySelector('#saveSet').onclick=()=>{
-    if(lv.phase!=='setting'){
-      const k=returnConflicts();
-      L.log('排休','修改設定（已通知全店）','',`可休 ${lv.days} 天，不能休 ${lv.noLeave.length?fmtDays(lv.noLeave):'無'}`); L.save();
-      toast('已儲存，已通知全店',k?`有 ${k} 筆劃休碰到不能休的日子，已自動退回。`:'沒有劃休受影響。','info'); location.hash='#/leave/review'; return;
-    }
-    L.log('排休','儲存設定'); L.save(); toast('已儲存','設定好了再按「送出、開放劃休」。','info');
-  };
-}
 function returnConflicts(){ const lv=L.S.leave; let k=0; D.employees.forEach(e=>reqDays(e.id).forEach(d=>{ if(lv.noLeave.includes(d)){ lv.returned[e.id+'_'+d]='碰到不能休的日子'; k++; } })); return k; }
-function leaveReview(box){
-  const S=L.S, lv=S.leave, mm=NX, ro = lv.phase==='confirmed';
-  const by = sessionStorage.getItem('lsp_lvgrp')||'group';
-  const days=[...Array(mm.days)].map((_,i)=>i+1), nol=new Set(lv.noLeave);
+function histLeave(mm){ // 過去月份的劃休（示範：從那個月班表的休假日推回來）
+  const M=L.S.months[mm.key], nol=mm.kind==='now'?[31]:[], out={};
+  D.employees.forEach((e,i)=>{ const off=M.sched[e.id].map((c,j)=>c==='休'&&!nol.includes(j+1)?j+1:0).filter(Boolean);
+    out[e.id]=off.length?[...new Set([off[i%off.length],off[(i+2)%off.length]])].sort((a,b)=>a-b):[]; });
+  return {reqs:out, nol, days:2};
+}
+/* 進度（唯讀的小步驟，不是按鈕） */
+function stepMini(cur){ return `<div class="stepmini">${LV_STEPS.map((t,i)=>`<span class="${i<cur?'done':(i===cur?'cur':'')}"><i>${i<cur?'✓':i+1}</i>${t}</span>`).join('<em>›</em>')}</div>`; }
+/* 列表：每個人劃了哪幾天 */
+function leaveList(mm, days, reqOf, opened){
+  const pf=sessionStorage.getItem('lsp_lvpf')||'all', dd=d=>`${mm.m}/${d}（${L.DOW[L.dow(d,mm)]}）`;
+  const by=sessionStorage.getItem('lsp_lvgrp')||'group'; let lastG=null;
+  const list=sortEmps(D.employees.filter(L.empFilterFn()),by).map(e=>{ const r=reqOf(e.id); return {e,r,done:opened&&r.length>=days}; }).filter(x=>pf==='all'||(pf==='done'?x.done:!x.done));
+  const gOf=e=>by==='title'?e.title:(e.group||'未選組別');
+  return `<div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th style="text-align:left">姓名</th><th>職稱・組別</th>${[...Array(days)].map((_,i)=>`<th>休假 ${i+1}</th>`).join('')}<th>已劃休</th><th>還可劃休</th><th>狀態</th></tr></thead><tbody>
+    ${list.map(x=>{ const g=gOf(x.e), gh=g!==lastG?`<tr class="grp-row"><td colspan="${5+days}" style="text-align:left">${esc(g)}　<small class="muted">${list.filter(y=>gOf(y.e)===g).length} 人</small></td></tr>`:''; lastG=g; return gh+`<tr><td style="text-align:left"><b>${esc(x.e.name)}</b> <small class="muted">${x.e.id}</small></td><td>${x.e.title}・${x.e.group||'未選組別'}</td>${[...Array(days)].map((_,i)=>`<td>${x.r[i]?dd(x.r[i]):'<span class="muted">—</span>'}</td>`).join('')}<td><b>${x.r.length}</b></td><td class="${opened&&days-x.r.length>0?'bad b':''}">${Math.max(0,days-x.r.length)}</td><td>${!opened?'<span class="pill">還沒開放</span>':(x.done?'<span class="st-pill done">✓ 已完成</span>':'<span class="st-pill todo">還沒劃完</span>')}</td></tr>`; }).join('')||`<tr><td colspan="${5+days}" class="muted" style="padding:16px">沒有人</td></tr>`}
+  </tbody></table></div>`;
+}
+/* 總表：每個人 × 每一天 */
+function leaveGrid(mm, o){ // o:{reqOf, nol, special, returned, days, ro}
+  const by=sessionStorage.getItem('lsp_lvgrp')||'group', days=[...Array(mm.days)].map((_,i)=>i+1), nol=new Set(o.nol);
   const head=days.map(d=>`<th class="${L.dow(d,mm)%6===0?'wk-sun':''} ${nol.has(d)?'lv nol':''}">${d}<br><small>${L.DOW[L.dow(d,mm)]}</small></th>`).join('');
-  const dayReq=days.map(()=>0), daySp=days.map(()=>0);
+  const dayReq=days.map(()=>0), daySp=days.map(()=>0), EMP=D.employees.filter(L.empFilterFn());
   let lastG=null;
-  const rows=sortEmps(D.employees,by).map(e=>{
-    const req=new Set(reqDays(e.id)), cnt=req.size, g=by==='title'?e.title:e.group;
-    const cells=days.map(d=>{
-      const k=e.id+'_'+d; let cls='', txt='';
-      if(lv.special[k]){ cls=lv.special[k]; txt=SPECIAL[lv.special[k]]; daySp[d-1]++; }
-      else if(lv.returned[k]){ cls='ret'; txt='退回'; }
+  const rows=sortEmps(EMP,by).map(e=>{
+    const req=new Set(o.reqOf(e.id)), cnt=req.size, g=by==='title'?e.title:e.group;
+    const cells=days.map(d=>{ const k=e.id+'_'+d; let cls='', txt='';
+      if(o.special[k]){ cls=o.special[k]; txt=SPECIAL[o.special[k]]; daySp[d-1]++; }
+      else if(o.returned[k]){ cls='ret'; txt='退回'; }
       else if(req.has(d)){ cls='req'; txt='休'; dayReq[d-1]++; }
-      return `<td class="lv ${cls}" data-id="${e.id}" data-d="${d}" style="cursor:${ro?'default':'pointer'}">${txt}</td>`;
-    }).join('');
-    const ret=Object.keys(lv.returned).filter(k=>k.startsWith(e.id+'_')).length;
-    const gh = g!==lastG ? `<tr class="grp-row"><td class="sticky" colspan="2">${esc(g)}</td><td colspan="${mm.days}"></td></tr>` : ''; lastG=g;
-    return gh+`<tr><td class="sticky" style="min-width:140px"><b>${esc(e.name)}</b><br><small class="muted">${e.title}・${e.group}</small></td>
-      <td class="${cnt>lv.days?'bad b':''}">${cnt} / ${lv.days}${cnt>lv.days?'<br><small>超過</small>':''}${ret?`<br><small class="bad">退回 ${ret}</small>`:''}</td>${cells}</tr>`;
-  }).join('');
-  const total=D.employees.length;
-  box.innerHTML=`
-    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
-      <div class="seg-toggle">${[['group','依組別'],['title','依職稱']].map(([k,t])=>`<button data-by="${k}" class="${by===k?'on':''}">${t}</button>`).join('')}</div>
-      <div class="legend"><span><i style="background:#ffd9d9"></i>員工 App 劃休</span><span><i style="outline:2px solid var(--bad);background:#fff"></i>退回</span><span><i style="background:#dbe9c4"></i>支援</span><span><i style="background:#ebe5f3"></i>受訓</span><span><i style="background:#d9d9d9"></i>育嬰留停</span><span><i class="hot"></i>當天休假 4 人以上</span><span><i class="nol"></i>不能休的日子</span></div></div>
-    ${ro?'<div class="banner blue">排休已確定。要改請先聯絡總部（示範：可按左下「重設示範資料」）。</div>':'<div class="muted" style="margin-bottom:8px">點「休」可以退回；點空白格可以設定支援、受訓、育嬰留停。</div>'}
-    <div class="tbl-wrap"><table class="g"><thead><tr><th class="sticky">姓名</th><th>劃休</th>${head}</tr></thead><tbody>${rows}</tbody>
-    <tfoot>
-      <tr><td class="sticky">休假人數</td><td></td>${dayReq.map(c=>`<td class="${c>=4?'hot':''}">${c}</td>`).join('')}</tr>
+      return `<td class="lv ${cls}" data-id="${e.id}" data-d="${d}" style="cursor:${o.ro?'default':'pointer'}">${txt}</td>`; }).join('');
+    const ret=Object.keys(o.returned).filter(k=>k.startsWith(e.id+'_')).length;
+    const gh = g!==lastG ? `<tr class="grp-row"><td class="sticky" colspan="2">${esc(g||'未選組別')}</td><td colspan="${mm.days}"></td></tr>` : ''; lastG=g;
+    return gh+`<tr><td class="sticky" style="min-width:140px"><b>${esc(e.name)}</b><br><small class="muted">${e.title}・${e.group||'未選組別'}</small></td>
+      <td class="${cnt>o.days?'bad b':''}">${cnt} / ${o.days}${cnt>o.days?'<br><small>超過</small>':''}${ret?`<br><small class="bad">退回 ${ret}</small>`:''}</td>${cells}</tr>`; }).join('');
+  const total=EMP.length;
+  return `<div class="tbl-wrap"><table class="g"><thead><tr><th class="sticky">姓名</th><th>劃休</th>${head}</tr></thead><tbody>${rows}</tbody>
+    <tfoot><tr><td class="sticky">休假人數</td><td></td>${dayReq.map(c=>`<td class="${c>=4?'hot':''}">${c}</td>`).join('')}</tr>
       <tr><td class="sticky">特殊人數</td><td></td>${daySp.map(c=>`<td>${c}</td>`).join('')}</tr>
-      <tr><td class="sticky">還可排人數</td><td></td>${days.map((d,i)=>`<td>${total-dayReq[i]-daySp[i]}</td>`).join('')}</tr>
-    </tfoot></table></div>
-    <ul class="note-below"><li>還可排人數＝全店 ${total} 人－休假－特殊（支援、受訓、育嬰留停佔工時，但不算門市戰力）。</li><li>按「確定排休」後，準備跑班表的排休那一項會自動打勾；產生 ${mm.m} 月班表時，劃休的日子會排成「休」。</li></ul>`;
-  box.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_lvgrp',b.dataset.by); L.redraw(); });
-  if(ro) return;
+      <tr><td class="sticky">還可排人數</td><td></td>${days.map((d,i)=>`<td>${total-dayReq[i]-daySp[i]}</td>`).join('')}</tr></tfoot></table></div>
+    <div class="legend" style="margin-top:8px"><span><i style="background:#ffd9d9"></i>員工 App 劃休</span><span><i style="outline:2px solid var(--bad);background:#fff"></i>退回</span><span><i style="background:#dbe9c4"></i>支援</span><span><i style="background:#ebe5f3"></i>受訓</span><span><i style="background:#d9d9d9"></i>育嬰留停</span><span><i class="hot"></i>當天休假 4 人以上</span><span><i class="nol"></i>不能休的日子</span></div>`;
+}
+function bindGridEdit(box, mm){
+  const S=L.S, lv=S.leave;
   box.querySelectorAll('td.lv[data-id]').forEach(td=>td.onclick=()=>{
     const id=td.dataset.id, d=Number(td.dataset.d), k=id+'_'+d, e=L.emp(id);
     if(td.classList.contains('req')){
@@ -346,13 +288,99 @@ function leaveReview(box){
     } else {
       modal(`<h3>${esc(e.name)} ${mm.m}/${d}</h3><div class="picks">${Object.entries(SPECIAL).map(([c,t])=>`<button data-s="${c}">${t}</button>`).join('')}<button data-s="">清除</button></div><div style="text-align:right"><button class="btn" data-x>取消</button></div>`,(m,close)=>{
         m.querySelector('[data-x]').onclick=close;
-        m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ const s=b.dataset.s; if(s) lv.special[k]=s; else delete lv.special[k]; L.log('排休',`${e.name} ${mm.m}/${d}`,'',s?SPECIAL[s]:'清除'); L.save(); close(); L.redraw(); });});
+        m.querySelectorAll('[data-s]').forEach(b=>b.onclick=()=>{ const sv=b.dataset.s; if(sv) lv.special[k]=sv; else delete lv.special[k]; L.log('排休',`${e.name} ${mm.m}/${d}`,'',sv?SPECIAL[sv]:'清除'); L.save(); close(); L.redraw(); });});
     }
   });
 }
+route('/leave', (main)=>{
+  const S=L.S, lv=S.leave;
+  const mm=L.mon(sessionStorage.getItem('lsp_lvmk')||NX.key)||NX, isNext=mm.kind==='next';
+  const h=isNext?null:histLeave(mm);
+  const days=isNext?lv.days:h.days, nol=isNext?lv.noLeave:h.nol, opened=isNext?lv.phase!=='setting':true;
+  const reqOf=isNext?(id=>lv.phase==='setting'?[]:reqDays(id)):(id=>h.reqs[id]);
+  const unlocked=sessionStorage.getItem('lsp_lvedit')==='1';
+  const canSet=isNext && (lv.phase==='setting' || (lv.phase==='review' && unlocked));   // 設定可不可以改
+  const canReview=isNext && lv.phase==='review';
+  const view=sessionStorage.getItem('lsp_lvview')||(opened?'grid':'list');
+  const EMP=D.employees.filter(L.empFilterFn()), nDone=opened?EMP.filter(e=>reqOf(e.id).length>=days).length:0, nTodo=EMP.length-nDone;
+  const pf=sessionStorage.getItem('lsp_lvpf')||'all';
+  // 右上按鈕
+  let right='';
+  const lvPill = !isNext?'<span class="pill sent">已確定・只能看</span>':({setting:'<span class="pill draft">設定中</span>',review:'<span class="pill saved">審核中</span>',confirmed:'<span class="pill ok">已確定</span>'}[lv.phase]);
+  if(!isNext) right='';
+  else if(lv.phase==='setting') right=`<button class="btn" id="saveSet">💾 儲存</button><button class="btn pri" id="open">📤 送出、開放劃休</button>`;
+  else if(lv.phase==='review') right=`${unlocked?'':'<button class="btn" id="editSet">✎ 修改設定</button>'}<button class="btn pri" id="confirm">✓ 確定排休</button>`;
+  else right='';
+  // 小月曆
+  const lead=(mm.fd+6)%7, sel=new Set(nol);
+  let cal=['一','二','三','四','五','六','日'].map(x=>`<div class="h">${x}</div>`).join('')+'<div class="o"></div>'.repeat(lead);
+  for(let d=1; d<=mm.days; d++) cal+=`<button class="cd ${sel.has(d)?'sel':''} ${[0,6].includes(L.dow(d,mm))?'we':''}" data-cd="${d}" ${canSet?'':'disabled'}>${d}</button>`;
+  main.innerHTML=`
+  <div class="sh">
+    <div class="sh-r1">${isNext?stepMini(PH_IDX[lv.phase]):'<span class="muted" style="font-size:17px">過去、本月的排休已確定，只能看</span>'}</div>
+    <div class="sh-r2"><div class="sh-left"><div class="sh-line">${L.monthPick(mm.key,'data-lvmk')}${lvPill}</div><div class="sh-line" style="font-size:17px">${isNext?(lv.phase==='setting'?`⏰ 請在 <b>${DUE}</b> 前設定好，<b>${OPEN}</b> 起員工就能用 App 劃 ${mm.m} 月的休假。`:(lv.phase==='review'?`員工已經劃完（示範：今天 ${REVIEW}），請審核後按「確定排休」。`:`${mm.m} 月排休已確定，產生班表時會把劃休的日子排成「休」。`)):`${mm.y} 年 ${mm.m} 月的排休已經確定、班表也排好了。`}</div></div>
+      <div class="sh-right"><div class="sh-btns">${right}</div></div></div>
+  </div>
+  <div class="lv-top">
+    <div class="card lv-set">
+      <div class="b" style="font-size:20px;margin-bottom:10px">${mm.y} 年 ${mm.m} 月</div>
+      <div class="sh-line" style="font-size:20px"><span>每人可以休</span><select class="sel-big" id="days" ${canSet?'':'disabled'} style="font-size:24px;font-weight:700;width:90px">${[1,2,3,4,5,6].map(x=>`<option ${x===days?'selected':''}>${x}</option>`).join('')}</select><span>天</span>${canSet?'<span class="muted" style="font-size:15px">先帶上個月的天數，可以改</span>':''}</div>
+      <div class="lv-cards">
+        <button class="lvp-card ok ${pf==='done'?'on':''}" data-pf="done"><small>已完成預先排休</small><b>${nDone}</b> 人</button>
+        <button class="lvp-card todo ${pf==='todo'?'on':''}" data-pf="todo"><small>還沒劃完</small><b>${nTodo}</b> 人</button>
+      </div>
+      <div class="muted" style="font-size:15px">${opened?'點卡片可以只看那些人（下面列表）；再點一次看全部。':`還沒開放員工劃休，${OPEN} 開放後這裡會即時更新。`}</div>
+      ${isNext&&lv.phase==='review'&&unlocked?'<div class="banner" style="margin:10px 0 0">正在修改設定：改了會通知全店，已劃的休碰到新的不能休日子會自動退回。</div>':''}
+    </div>
+    <div class="card lv-cal">
+      <div class="sh-line" style="margin-bottom:8px"><b style="font-size:20px">${mm.m} 月不能休的日子</b><div class="spacer"></div>${canSet?`<button class="btn sm ${sel.size?'':'soft'}" id="none">無</button>`:''}</div>
+      <div class="muted" style="font-size:15px;margin-bottom:6px">${canSet?'點日子就能選或取消，紅色＝員工在 App 上不能劃休。':'紅色＝不能休的日子。'}</div>
+      <div class="cal2">${cal}</div>
+      <div class="sh-line" style="margin-top:8px"><span class="lbl">已選：</span><span>${sel.size?fmtDays([...sel],mm.m):'無'}</span></div>
+    </div>
+  </div>
+  <div class="sh-line" style="margin:6px 0 10px"><div class="seg big">${[['grid','📊 總表（每天）'],['list','📋 列表（每人）']].map(([k,t])=>`<button data-lvv="${k}" class="${view===k?'on':''}">${t}</button>`).join('')}</div>
+    <div class="seg">${[['group','依組別'],['title','依職稱']].map(([k,t])=>`<button data-by="${k}" class="${(sessionStorage.getItem('lsp_lvgrp')||'group')===k?'on':''}">${t}</button>`).join('')}</div>
+    <div class="spacer"></div>${L.empFilterBar()}</div>
+  <div id="lvBody">${view==='grid'
+    ? (opened ? leaveGrid(mm,{reqOf, nol, special:isNext?lv.special:{}, returned:isNext?lv.returned:{}, days, ro:!canReview}) : '<div class="empty-page">還沒開放員工劃休，開放後這裡會顯示每天誰休假。</div>')
+    : leaveList(mm, days, reqOf, opened)}</div>
+  ${canReview&&view==='grid'?'<div class="muted" style="margin-top:6px">點「休」可以退回；點空白格可以設定支援、受訓、育嬰留停。</div>':''}
+  <ul class="note-below"><li>不能休的日子只有店長設定（總部不設定）。${DUE} 還沒送出：系統自動沿用上個月的天數，${OPEN} 照常開放並通知店長。</li><li>還可排人數＝人數－休假－特殊（支援、受訓、育嬰留停佔工時，但不算門市戰力）。</li>${isNext?'':'<li>示範資料：過去月份的劃休是從那個月班表的休假日推回來的。</li>'}</ul>`;
+  // 綁定
+  L.bindEmpFilter(main);
+  main.querySelectorAll('[data-lvmk]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_lvmk',b.dataset.lvmk); sessionStorage.removeItem('lsp_lvview'); L.redraw(); });
+  main.querySelectorAll('[data-lvv]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_lvview',b.dataset.lvv); L.redraw(); });
+  main.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_lvgrp',b.dataset.by); L.redraw(); });
+  main.querySelectorAll('[data-pf]').forEach(b=>b.onclick=()=>{ const cur=sessionStorage.getItem('lsp_lvpf'); sessionStorage.setItem('lsp_lvpf',cur===b.dataset.pf?'all':b.dataset.pf); sessionStorage.setItem('lsp_lvview','list'); L.redraw(); });
+  if(!isNext) return;
+  const changed=()=>{ if(lv.phase==='review'){ const k=returnConflicts(); L.save(); toast('已更新，已通知全店',k?`有 ${k} 筆劃休碰到不能休的日子，已自動退回。`:'沒有劃休受影響。','info'); } else L.save(); L.redraw(); };
+  if(canSet){
+    main.querySelector('#days').onchange=ev=>{ lv.days=Number(ev.target.value); L.log('排休','每人可休天數','',`${lv.days} 天`); changed(); };
+    main.querySelectorAll('[data-cd]').forEach(c=>c.onclick=()=>{ const d=Number(c.dataset.cd); const i=lv.noLeave.indexOf(d); if(i>=0) lv.noLeave.splice(i,1); else lv.noLeave.push(d); changed(); });
+    const nn=main.querySelector('#none'); if(nn) nn.onclick=()=>{ lv.noLeave=[]; changed(); };
+  }
+  if(canReview) bindGridEdit(main.querySelector('#lvBody'), mm);
+  const ss=main.querySelector('#saveSet'); if(ss) ss.onclick=()=>{ L.log('排休','儲存設定'); L.save(); toast('已儲存','設定好了再按「送出、開放劃休」。','info'); };
+  const op=main.querySelector('#open'); if(op) op.onclick=()=>{
+    returnConflicts(); lv.phase='review'; sessionStorage.setItem('lsp_lvview','grid');
+    L.log('排休','送出、開放劃休',`可休 ${lv.days} 天`,lv.noLeave.length?'不能休 '+fmtDays(lv.noLeave):'不能休：無'); L.save(); L.redraw();
+    toast('已開放劃休',`示範：時間跳到 ${REVIEW}，員工已經劃完，可以開始審核。`,'info'); };
+  const es=main.querySelector('#editSet'); if(es) es.onclick=()=>modal(`<h3 class="bad">⚠ 員工已經開始劃休了</h3><p style="font-size:19px">改了設定會通知全店員工。已經劃的休如果碰到新的不能休日子，會自動退回。</p>
+    <div style="display:flex;gap:10px;justify-content:flex-end"><button class="btn" data-x>取消</button><button class="btn pri" data-ok>確定修改</button></div>`,(m,close)=>{
+      m.querySelector('[data-x]').onclick=close; m.querySelector('[data-ok]').onclick=()=>{ close(); sessionStorage.setItem('lsp_lvedit','1'); L.redraw(); };});
+  const cf=main.querySelector('#confirm'); if(cf) cf.onclick=()=>{
+    const over=D.employees.filter(e=>reqDays(e.id).length>lv.days);
+    if(over.length && !confirm(`還有 ${over.length} 人劃休超過 ${lv.days} 天（${over.map(e=>e.name).join('、')}），還是要確定嗎？`)) return;
+    lv.phase='confirmed'; sessionStorage.removeItem('lsp_lvedit'); L.log('排休',`確定 ${NX.m} 月排休`,'','已確定'); L.save(); L.redraw();
+    toast('排休已確定',`「智能排班 → ${NX.m} 月」準備跑班表的第 4 項已自動打勾。`,'info');
+  };
+});
 
 /* ============ 員工技能（排序＋分組） ============ */
 const GROUP_SKILLS={'管理':['管理','值班','收銀'],'值班':['值班','收銀','乾貨人力'],'乾貨':['乾貨人力','收銀'],'生鮮':['生鮮擔當','生鮮人力','收銀'],'熟食':['熟食擔當','熟食人力','收銀']};
+function setGroup(e, g){ if(!e||!g||g===e.group) return; const S=L.S, old=e.group||'未選'; S.empGroup=S.empGroup||{}; S.empGroup[e.id]=g; sessionStorage.removeItem('lsp_skpg_'+e.id);
+  L.log('技能',`${e.name} 組別`,old,g); L.save(); toast('已改組別',`${e.name}：${old} → ${g}。現在可以點「${g}」的技能。`,'info'); L.redraw(); }
 route('/skills',(main)=>{
   const S=L.S;
   const mode = sessionStorage.getItem('lsp_skmode')||'table';   // table | person
@@ -361,9 +389,12 @@ route('/skills',(main)=>{
   const head=`<div class="top"><h2>員工技能</h2><span class="muted">設定每個人會做的工作和順位：① 最優先。日作業表先分 ① 的工作，① 人夠了才分 ②</span></div>
   <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><b>畫面：</b>
     <div class="seg-toggle">${[['table','📋 表格設定'],['person','👤 列表設定']].map(([k,t])=>`<button data-mode="${k}" class="${mode===k?'on':''}">${t}</button>`).join('')}</div>
-    <span style="flex:1"></span><button class="btn" id="skClear" style="border-color:var(--bad);color:var(--bad)">🗑️ 清空全部技能</button></div>`;
+    <span style="flex:1"></span><button class="btn" id="skSample" title="示範用：組別和技能照原始班表資料填好">📥 帶入範例資料</button><button class="btn" id="skClear" style="border-color:var(--bad);color:var(--bad)">🗑️ 清空全部技能</button></div>`;
   const bindHead=()=>{
     main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skmode',b.dataset.mode); L.redraw(); });
+    main.querySelector('#skSample').onclick=()=>modal(`<h3>帶入範例資料？</h3><div class="b">全部 ${D.employees.length} 位員工的組別和技能，會照原始班表資料填好（示範用）。現在設定的會被蓋掉。</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn" data-x>不要</button><button class="btn pri" data-ok>帶入</button></div>`,(m,close)=>{
+      m.querySelector('[data-x]').onclick=close; m.querySelector('[data-ok]').onclick=()=>{ L.fillSample(); L.log('技能','帶入範例組別與技能'); close(); L.toast('已帶入範例資料'); L.redraw(); }; });
     main.querySelector('#skClear').onclick=()=>modal(`<h3>清空全部技能？</h3><div class="b">全部 ${D.employees.length} 位員工的技能和順位都會清掉，要重新一個一個設定。</div><div class="muted" style="margin-top:6px">清空後日作業表沒辦法自動分工。不小心按到，可以按左下「重設示範資料」恢復。</div>
       <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn" data-x>不要</button><button class="btn" data-ok style="background:var(--bad);border-color:var(--bad);color:#fff">確定清空</button></div>`,(m,close)=>{
       m.querySelector('[data-x]').onclick=close;
@@ -373,7 +404,7 @@ route('/skills',(main)=>{
 
   /* ---- 模式二：一個一個設定（選人 → 選組別 → 點技能 → 排順位） ---- */
   if(mode==='person'){
-    const fg = sessionStorage.getItem('lsp_skfg')||'all';
+    const fg = sessionStorage.getItem('lsp_skfg')??'all';
     const list = sortEmps(D.employees,'group').filter(e=>fg==='all'||e.group===fg);
     let sel = sessionStorage.getItem('lsp_sksel'); if(!list.some(e=>e.id===sel)) sel = list[0]&&list[0].id;
     const e = sel && L.emp(sel), arr = e ? S.skills[e.id] : [];
@@ -381,15 +412,15 @@ route('/skills',(main)=>{
     const groups = GROUP_ORDER.filter(g=>GROUP_SKILLS[g]);
     const cnt=g=>D.employees.filter(x=>x.group===g).length;
     main.innerHTML = head + `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><b>看哪一組：</b>
-      ${[['all','全部',D.employees.length],...groups.filter(cnt).map(g=>[g,g,cnt(g)])].map(([k,t,n])=>`<button class="chip-btn ${fg===k?'on':''}" data-fg="${k}">${t} <small>${n}</small></button>`).join('')}</div>
+      ${[['all','全部',D.employees.length],...groups.filter(cnt).map(g=>[g,g,cnt(g)]),...(cnt('')?[['','未選組別',cnt('')]]:[])].map(([k,t,n])=>`<button class="chip-btn ${fg===k?'on':''}" data-fg="${k}">${t} <small>${n}</small></button>`).join('')}</div>
     <div class="sk2">
       <div class="tbl-wrap sk2-list">${list.map(x=>{ const a=S.skills[x.id]; return `<button class="sk2-emp ${x.id===sel?'on':''} ${a.length?'':'empty'}" data-sel="${x.id}"><b>${esc(x.name)}</b> <small class="muted">${x.id}・${x.title}・${x.group}</small><div class="sk2-sum">${a.length?a.map((s,i)=>`<span>${'①②③④⑤⑥⑦⑧'[i]}${s}</span>`).join(''):'<span class="warn-t">還沒設定</span>'}</div></button>`; }).join('')||'<div class="muted" style="padding:16px">這一組沒有人</div>'}</div>
       ${e?`<div class="sk2-panel">
-        <div class="sk2-ph"><div><b style="font-size:22px">${esc(e.name)}</b> <span class="muted">${e.id}　${e.title}・${e.group}</span></div>
+        <div class="sk2-ph"><div><b style="font-size:22px">${esc(e.name)}</b> <span class="muted">${e.id}　${e.title}・${e.group||'未選組別'}</span></div>
           <label class="sk2-ref">照誰設定：<select id="skRef"><option value="">選一位同事…</option>${groups.filter(cnt).map(g=>`<optgroup label="${g}">${sortEmps(D.employees,'group').filter(x=>x.group===g&&x.id!==e.id).map(x=>`<option value="${x.id}">${esc(x.name)}（${x.title}）${S.skills[x.id].length?'：'+S.skills[x.id].map((s,i)=>'①②③④⑤⑥⑦⑧'[i]+s).join(' '):'：還沒設定'}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
-        <div class="sk2-step"><span class="num">1</span> 選組別</div>
+        <div class="sk2-step"><span class="num">1</span> 選組別${e.group?'':'<span class="bad" style="font-size:16px">　← 先選這個人是哪一組</span>'}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">${groups.map(g=>`<button class="chip-btn ${pg===g?'on':''}" data-pg="${g}">${g}${g===e.group?' <small>(本組)</small>':''}</button>`).join('')}</div>
-        <div class="sk2-step"><span class="num">2</span> 點會做的技能（再點一次取消）</div>
+        <div class="sk2-step"><span class="num">2</span> 點會做的技能（再點一次取消）</div>${pg?'':'<div class="muted">選好組別後，這裡會出現那一組的技能。</div>'}
         <div style="display:flex;gap:10px;flex-wrap:wrap">${(GROUP_SKILLS[pg]||[]).map(s=>{ const k=arr.indexOf(s); return `<button class="sk2-skill ${k>=0?'on':''}" data-tog="${s}"><i style="background:${L.taskColor(s)}"></i>${s}${k>=0?` <b>${'①②③④⑤⑥⑦⑧'[k]}</b>`:''}</button>`; }).join('')}</div>
         <div class="sk2-step"><span class="num">3</span> 排順位（① 最優先）</div>
         ${arr.length?arr.map((s,i)=>`<div class="sk2-row"><span class="rank on ${i===0?'first':''}">${i+1}</span><i style="background:${L.taskColor(s)}"></i><b style="flex:1">${s}</b>
@@ -404,10 +435,10 @@ route('/skills',(main)=>{
     if(!e) return;
     const edit=fn=>{ const before=order(arr); fn(); changed(e,before); };
     main.querySelector('#skRef').onchange=ev=>{ const r=L.emp(ev.target.value); if(!r) return;
-      sessionStorage.setItem('lsp_skpg_'+e.id, r.group);
+      sessionStorage.setItem('lsp_skpg_'+e.id, r.group); if(e.group!==r.group){ S.empGroup=S.empGroup||{}; S.empGroup[e.id]=r.group; }
       edit(()=>{ arr.splice(0, arr.length, ...S.skills[r.id]); });
       L.toast(`已照 ${r.name} 設定`, `組別：${r.group}　技能：${order(S.skills[r.id])}`); };
-    main.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skpg_'+e.id,b.dataset.pg); L.redraw(); });
+    main.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ if(!e.group){ setGroup(e,b.dataset.pg); return; } sessionStorage.setItem('lsp_skpg_'+e.id,b.dataset.pg); L.redraw(); });
     main.querySelectorAll('[data-tog]').forEach(b=>b.onclick=()=>edit(()=>{ const s=b.dataset.tog, k=arr.indexOf(s); if(k<0) arr.push(s); else arr.splice(k,1); }));
     main.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.up; [arr[i-1],arr[i]]=[arr[i],arr[i-1]]; }));
     main.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.down; [arr[i+1],arr[i]]=[arr[i],arr[i+1]]; }));
@@ -430,16 +461,18 @@ route('/skills',(main)=>{
   let lastG=null;
   const rows=list.map(e=>{
     const g = by==='title'?e.title:(by==='group'?e.group:null);
-    const gh = (by!=='none' && g!==lastG) ? `<tr class="grp-row"><td class="sticky">${esc(g)}　<small class="muted">${list.filter(x=>(by==='title'?x.title:x.group)===g).length} 人</small></td><td colspan="${2+L.SKILLS.length}"></td></tr>` : ''; lastG=g;
-    return gh+`<tr><td class="sticky"><b>${esc(e.name)}</b><br><small class="muted">${e.id}</small></td><td>${e.title}</td><td>${e.group}</td>${L.SKILLS.map(s=>{ const k=S.skills[e.id].indexOf(s); return `<td><button class="rank ${k<0?'':'on'} ${k===0?'first':''}" data-id="${e.id}" data-s="${s}" title="${k<0?'點一下加入':'點一下改順位或取消'}">${k<0?'':k+1}</button></td>`; }).join('')}</tr>`;
+    const gh = (by!=='none' && g!==lastG) ? `<tr class="grp-row"><td class="sticky">${esc(g||'未選組別')}　<small class="muted">${list.filter(x=>(by==='title'?x.title:x.group)===g).length} 人</small></td><td colspan="${2+L.SKILLS.length}"></td></tr>` : ''; lastG=g;
+    const okS=GROUP_SKILLS[e.group]||[];
+    return gh+`<tr><td class="sticky"><b>${esc(e.name)}</b><br><small class="muted">${e.id}</small></td><td>${e.title}</td><td><select class="grp-sel ${e.group?'':'need'}" data-gid="${e.id}">${e.group?'':'<option value="" selected>請選組別</option>'}${GROUP_ORDER.map(g=>`<option ${g===e.group?'selected':''}>${g}</option>`).join('')}</select></td>${L.SKILLS.map(s=>{ const k=S.skills[e.id].indexOf(s), off=k<0&&!okS.includes(s); return `<td class="${off?'sk-off':''}">${off?`<span class="sk-na" title="${e.group?'不是這個組別的技能，要先換組別':'請先選組別'}">－</span>`:`<button class="rank ${k<0?'':'on'} ${k===0?'first':''}" data-id="${e.id}" data-s="${s}" title="${k<0?'點一下加入':'點一下改順位或取消'}">${k<0?'':k+1}</button>`}</td>`; }).join('')}</tr>`;
   }).join('');
   main.innerHTML=head+`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><b>分組看：</b>
     <div class="seg-toggle">${[['group','依組別'],['title','依職稱'],['none','不分組']].map(([k,t])=>`<button data-by="${k}" class="${by===k?'on':''}">${t}</button>`).join('')}</div>
     <span class="muted">點表頭可以排序（再點一次反過來）</span>${sk?'<button class="btn sm" id="unsort">取消排序</button>':''}</div>
   <div class="tbl-wrap"><table class="g"><thead><tr>${cols.map(([c,t],i)=>`<th class="sort ${i===0?'sticky':''}" data-col="${c}">${t}${arrow(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
-  <ul class="note-below"><li>技能只有 8 種：管理、值班、收銀、乾貨人力、生鮮擔當、生鮮人力、熟食擔當、熟食人力。顏色由總部「🎨 工作項目與顏色」設定。</li><li>點空格＝加在最後一個順位；點有數字的格子可以改順位或取消，其他順位自動補位。</li><li>點技能的表頭，會把這個技能順位高的人排前面。依組別、依職稱分組時，會在每一組裡面排序。</li></ul>`;
+  <ul class="note-below"><li>技能只有 8 種：管理、值班、收銀、乾貨人力、生鮮擔當、生鮮人力、熟食擔當、熟食人力。顏色由總部「🎨 工作項目與顏色」設定。</li><li>一開始每個人都還沒有組別：先在「組別」選這個人是哪一組，那一組的技能才可以點；之後還可以再換組別。</li><li>不是這一組的技能會顯示「－」，要先換組別才能點。</li><li>點空格＝加在最後一個順位；點有數字的格子可以改順位或取消，其他順位自動補位。</li><li>點技能的表頭，會把這個技能順位高的人排前面。依組別、依職稱分組時，會在每一組裡面排序。</li></ul>`;
   bindHead();
   main.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skgrp',b.dataset.by); L.redraw(); });
+  main.querySelectorAll('.grp-sel').forEach(sel=>sel.onchange=()=>setGroup(L.emp(sel.dataset.gid), sel.value));
   main.querySelectorAll('th[data-col]').forEach(th=>th.onclick=()=>{ const c=th.dataset.col; const dir = sk&&sk.col===c ? -sk.dir : 1; sessionStorage.setItem('lsp_sksort',JSON.stringify({col:c,dir})); L.redraw(); });
   const us=main.querySelector('#unsort'); if(us) us.onclick=()=>{ sessionStorage.removeItem('lsp_sksort'); L.redraw(); };
   main.querySelectorAll('.rank').forEach(b=>b.onclick=()=>{
@@ -458,7 +491,76 @@ route('/skills',(main)=>{
 });
 
 /* ============ 員工班別（門市自己填代號與時間） ============ */
+/* 員工班別：三個頁籤 */
+const SH_TABS=[['list','班別名稱與時間'],['unavail','不可排班時段'],['pref','個人常用班別']];
+function shTabs(cur){ return `<div class="tabs">${SH_TABS.map(([k,t])=>`<button data-sht="${k}" class="${cur===k?'on':''}">${t}</button>`).join('')}</div>`; }
+function bindShTabs(main){ main.querySelectorAll('[data-sht]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_shtab',b.dataset.sht); L.redraw(); window.scrollTo(0,0); }); }
+const DOWS=[[1,'一'],[2,'二'],[3,'三'],[4,'四'],[5,'五'],[6,'六'],[0,'日']];
+function tSel(id,val){ let o=''; for(let m=5*60;m<=1440;m+=15){ const t=m===1440?'24:00':L.fmt(m); o+=`<option ${t===val?'selected':''}>${t}</option>`; } return `<select class="sel-big" id="${id}">${o}</select>`; }
+function unavailPage(main){
+  const S=L.S; S.unavail=S.unavail||{};
+  const list=sortEmps(D.employees.filter(L.empFilterFn()),'group');
+  main.innerHTML=`<div class="top"><h2>員工班別</h2><span class="muted">每個人固定哪幾天、哪個時段不能上班（例如上課、接小孩）</span></div>${shTabs('unavail')}
+  ${L.empFilterBar()}
+  <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th class="sticky" style="text-align:left">姓名</th><th>職稱・組別</th><th>設定</th>${DOWS.map(([d,t])=>`<th class="${d===0||d===6?'wk-sun':''}" style="min-width:110px">${t}</th>`).join('')}</tr></thead><tbody>
+  ${list.map(e=>{ const u=S.unavail[e.id]||[]; return `<tr><td class="sticky" style="text-align:left"><b>${esc(e.name)}</b><br><small class="muted">${e.id}</small></td><td>${e.title}・${e.group||'未選組別'}</td><td><button class="btn sm" data-ua="${e.id}">設定</button></td>
+    ${DOWS.map(([d])=>`<td>${u.map((x,i)=>x.d===d?`<button class="ua-chip" data-uid="${e.id}" data-ui="${i}" title="點一下刪除">${x.a}～${x.b}</button>`:'').join('')}</td>`).join('')}</tr>`; }).join('')}
+  </tbody></table></div>
+  <ul class="note-below"><li>按「設定」選星期幾、哪個時段不能排班；點紅色時段可以刪除。</li><li>月班表如果把人排到不可排班的時段，格子會用紫色點線框起來提醒。</li></ul>`;
+  bindShTabs(main); L.bindEmpFilter(main);
+  main.querySelectorAll('[data-ua]').forEach(b=>b.onclick=()=>{ const e=L.emp(b.dataset.ua), pick=new Set();
+    modal(`<h3>不可排班時段　${esc(e.name)}</h3>
+      <div class="b" style="margin-top:8px">1. 星期幾不能排（可以選很多天）</div>
+      <div class="picks" style="grid-template-columns:repeat(auto-fill,minmax(90px,1fr))">${DOWS.map(([d,t])=>`<button data-pd="${d}">星期${t}</button>`).join('')}</div>
+      <div class="b">2. 哪個時段不能排</div>
+      <div style="display:flex;gap:12px;align-items:center;font-size:20px;margin:10px 0 4px;flex-wrap:wrap">從 ${tSel('ua_a','12:00')} 到 ${tSel('ua_b','17:30')}</div>
+      <div style="display:flex;justify-content:space-between;gap:10px;margin-top:16px;flex-wrap:wrap"><button class="btn" data-clr style="border-color:var(--bad);color:var(--bad)">全部清除（每天都可以排）</button><div><button class="btn" data-x>取消</button> <button class="btn pri" data-ok>確定</button></div></div>`,(m,close)=>{
+      m.querySelectorAll('[data-pd]').forEach(x=>x.onclick=()=>{ const d=+x.dataset.pd; pick.has(d)?pick.delete(d):pick.add(d); x.classList.toggle('cur',pick.has(d)); });
+      m.querySelector('[data-x]').onclick=close;
+      m.querySelector('[data-clr]').onclick=()=>{ S.unavail[e.id]=[]; L.log('班別',`${e.name} 不可排班時段`,'','全部清除'); L.save(); close(); L.redraw(); };
+      m.querySelector('[data-ok]').onclick=()=>{ const a=m.querySelector('#ua_a').value, z=m.querySelector('#ua_b').value;
+        if(!pick.size){ toast('還沒選星期','請先點星期幾。'); return; } if(L.tm(z)<=L.tm(a)&&z!=='24:00'){ toast('時間不對','結束要比開始晚。'); return; }
+        S.unavail[e.id]=(S.unavail[e.id]||[]).concat([...pick].map(d=>({d,a,b:z})));
+        L.log('班別',`${e.name} 不可排班時段`,'',`星期${[...pick].map(d=>DOWS.find(x=>x[0]===d)[1]).join('、')} ${a}～${z}`); L.save(); close(); L.redraw(); };
+    }); });
+  main.querySelectorAll('[data-uid]').forEach(b=>b.onclick=()=>{ const e=L.emp(b.dataset.uid), arr=S.unavail[e.id], x=arr[+b.dataset.ui];
+    if(!confirm(`刪除 ${e.name} 星期${DOWS.find(y=>y[0]===x.d)[1]} ${x.a}～${x.b} 的不可排班時段？`)) return;
+    arr.splice(+b.dataset.ui,1); L.log('班別',`${e.name} 刪除不可排班時段`,`${x.a}～${x.b}`,''); L.save(); L.redraw(); });
+}
+/* 個人常用班別：最近的班表統計（11 月整月＋12 月到昨天），可設平日／假日預設 */
+function prefPage(main){
+  const S=L.S; S.prefShift=S.prefShift||{};
+  const t=L.today(), months=[[L.MONTHS[0],L.MONTHS[0].days],[NW,t.d-1]];
+  const stat=id=>{ const r={}; months.forEach(([mm,last])=>{ const row=S.months[mm.key].sched[id]; for(let d=1; d<=last; d++){ const c=row[d-1]; if(!L.shiftOf(c)) continue; const we=[0,6].includes(L.dow(d,mm));
+      r[c]=r[c]||{n:0,wd:0,we:0}; r[c].n++; r[c][we?'we':'wd']++; } }); return Object.entries(r).sort((a,b)=>b[1].n-a[1].n); };
+  const list=sortEmps(D.employees.filter(L.empFilterFn()),'group');
+  let sel=sessionStorage.getItem('lsp_prefsel'); if(!list.some(e=>e.id===sel)) sel=list[0]&&list[0].id;
+  const e=sel&&L.emp(sel), st=e?stat(e.id):[], pf=(e&&S.prefShift[e.id])||{};
+  const sum=x=>{ const p=S.prefShift[x.id]||{}; return p.wd||p.we?`平日 <b>${p.wd||'—'}</b>　假日 <b>${p.we||'—'}</b>`:'<span class="muted">還沒設預設</span>'; };
+  main.innerHTML=`<div class="top"><h2>員工班別</h2><span class="muted">看每個人最近最常上哪些班，設定平日／假日的預設班別</span></div>${shTabs('pref')}
+  ${L.empFilterBar()}
+  <div class="sk2">
+    <div class="tbl-wrap sk2-list">${list.map(x=>`<button class="sk2-emp ${x.id===sel?'on':''}" data-ps="${x.id}"><b>${esc(x.name)}</b> <small class="muted">${x.id}・${x.title}・${x.group||'未選組別'}</small><div class="sk2-sum">${sum(x)}</div></button>`).join('')||'<div class="muted" style="padding:16px">沒有人</div>'}</div>
+    ${e?`<div class="sk2-panel">
+      <div class="sk2-ph"><div><b style="font-size:22px">${esc(e.name)}</b> <span class="muted">${e.id}　${e.title}・${e.group||'未選組別'}</span></div></div>
+      <div class="muted" style="margin:10px 0">統計期間：${L.MONTHS[0].m}/1～${NW.m}/${t.d-1}（假日＝週六、週日）</div>
+      <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th>班別</th><th>工時</th><th>總次數</th><th>平日次數</th><th>假日次數</th><th>平日預設</th><th>假日預設</th></tr></thead><tbody>
+      ${st.map(([c,v],i)=>{ const sh=L.shiftOf(c); return `<tr><td><b>${esc(c)}</b><br><small class="muted">${sh.start}～${sh.end}</small></td><td>${L.hrsTag(c)}</td><td><b>${v.n}</b>${i===0?'<br><small class="muted">最常上</small>':''}</td><td>${v.wd}</td><td>${v.we}</td>
+        <td><button class="pref ${pf.wd===c?'on':''}" data-pk="wd" data-pc="${esc(c)}">${pf.wd===c?'★ 主力':'＋'}</button></td><td><button class="pref ${pf.we===c?'on':''}" data-pk="we" data-pc="${esc(c)}">${pf.we===c?'★ 主力':'＋'}</button></td></tr>`; }).join('')||'<tr><td colspan="7" class="muted">這段期間沒有上班紀錄</td></tr>'}
+      </tbody></table></div>
+      <div class="muted" style="margin-top:10px">點「＋」設成預設（主力），再點一次取消。平日、假日各一個。</div>
+    </div>`:''}
+  </div>
+  <ul class="note-below"><li>預設班別＝產生下個月班表時，這個人平日／假日優先排的班別（示範：先記錄，排班規則之後接上）。</li></ul>`;
+  bindShTabs(main); L.bindEmpFilter(main);
+  main.querySelectorAll('[data-ps]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_prefsel',b.dataset.ps); L.redraw(); });
+  main.querySelectorAll('[data-pk]').forEach(b=>b.onclick=()=>{ const k=b.dataset.pk, c=b.dataset.pc, p=S.prefShift[e.id]=S.prefShift[e.id]||{}; const old=p[k]||'';
+    p[k]= p[k]===c ? '' : c; L.log('班別',`${e.name} ${k==='wd'?'平日':'假日'}預設班別`,old,p[k]||'取消'); L.save(); L.redraw(); });
+}
 route('/shifts',(main)=>{
+  const tab=sessionStorage.getItem('lsp_shtab')||'list';
+  if(tab==='unavail'){ unavailPage(main); return; }
+  if(tab==='pref'){ prefPage(main); return; }
   const S=L.S, mk=NW.key;
   const use={}; Object.values(S.months[mk].sched).forEach(r=>r.forEach(c=>{ if(L.isWork(c)) use[c]=(use[c]||0)+1; }));
   const tot=Object.values(use).reduce((a,b)=>a+b,0);
@@ -468,15 +570,17 @@ route('/shifts',(main)=>{
   const maxU=Math.max(1,...Object.values(use));
   const inp='font-size:18px;padding:6px 10px;border:1.5px solid var(--ink);border-radius:8px';
   main.innerHTML=`<div class="top"><h2>員工班別</h2><span class="muted">上下班時間從歷史班表抓出來，不能改；班別名稱由門市自己取（就是班表上顯示的字）；人次是 ${NW.m} 月（本月）的使用次數</span><div class="spacer"></div><button class="btn soft" id="add">＋ 新增班別</button></div>
+  ${shTabs('list')}
   <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px"><b>排序：</b><div class="seg-toggle">${[['pct','占比高→低'],['time','上班時間早→晚']].map(([k,t])=>`<button data-ord="${k}" class="${ord===k?'on':''}">${t}</button>`).join('')}</div></div>
   <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th>上班</th><th>下班</th><th>淨工時</th><th>早／晚</th><th>本月人次</th><th>占比</th><th style="text-align:left">班別名稱</th><th></th></tr></thead><tbody>
   ${list.map(([c,s])=>`<tr>
     <td style="font-size:20px;font-weight:700">${s.start}</td><td style="font-size:20px;font-weight:700">${s.end}</td>
-    <td>${L.netH(c)} h</td><td>${L.tm(s.start)<L.tm('13:30')?'早班':'晚班'}</td><td>${use[c]||0}</td><td style="min-width:260px;text-align:left"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:22px;background:#eef1f6;border-radius:6px;overflow:hidden"><div style="height:100%;width:${(use[c]||0)/maxU*100}%;background:#6f9be0;border-radius:6px"></div></div><b style="width:58px;text-align:right">${tot?((use[c]||0)/tot*100).toFixed(1):0}%</b></div></td>
+    <td>${L.netH(c)} h <small class="muted">${L.hrsTag(c)}</small></td><td>${L.tm(s.start)<L.tm('13:30')?'早班':'晚班'}</td><td>${use[c]||0}</td><td style="min-width:260px;text-align:left"><div style="display:flex;align-items:center;gap:10px"><div style="flex:1;height:22px;background:#eef1f6;border-radius:6px;overflow:hidden"><div style="height:100%;width:${(use[c]||0)/maxU*100}%;background:#6f9be0;border-radius:6px"></div></div><b style="width:58px;text-align:right">${tot?((use[c]||0)/tot*100).toFixed(1):0}%</b></div></td>
     <td style="text-align:left"><input data-code="${esc(c)}" value="${esc(c)}" style="${inp};width:160px;font-weight:400;border-color:var(--line)"></td>
     <td>${inUse(c)?'<small class="muted">使用中</small>':`<button class="btn sm" data-del="${esc(c)}">刪除</button>`}</td></tr>`).join('')}
   </tbody></table></div>
   <ul class="note-below"><li>班別名稱（A、A1、早晨、晚收銀…）由門市自己取，月班表格子上顯示的就是這個名稱；改名稱會一起改掉所有月份班表。名稱盡量短（2～4 個字），格子才放得下。</li><li>淨工時：班長 4 小時以下不扣休息；4～7 小時扣 30 分；7 小時以上扣 1 小時。13:30 以前上班算早班。</li><li>有排在任何月份班表上的班別不能刪，要先在月班表換掉。</li></ul>`;
+  bindShTabs(main);
   main.querySelectorAll('[data-ord]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_shsort',b.dataset.ord); L.redraw(); });
   function inUse(c){ return Object.values(S.months).some(M=>Object.values(M.sched).some(r=>r.includes(c))); }
   main.querySelectorAll('[data-code]').forEach(i=>i.onchange=()=>{
@@ -542,6 +646,9 @@ function staffSummary(mode){
     daily=String(per); month=per*mm.days;
     how=`每半小時的人數 × 0.5 小時＝每天人時；× ${mm.days} 天（${mm.m} 月）。`;
   }
+  let peakK;
+  if(mode==='simple'){ const tot=k=>S.staffing.reduce((a,x)=>a+firstNum(x[k]),0); peakK=`<div class="k"><small>每天人數（週一／平日／週六）</small><b style="font-size:18px">${tot('mon')}／${tot('wk')}／${tot('sat')}</b> 人</div>`; }
+  else { const tt=[...Array(L.NSLOT)].map((_,i)=>L.SKILLS.reduce((a,x)=>a+(S.req[x][i]||0),0)); peakK=`<div class="k"><small>最多同時</small><b>${Math.max(...tt)}</b> 人</div>`; }
   const over=month>st.budget, overT=month>S.target;
   const stTxt = over?`<b class="bad">⚠ 超過可用時數 ${n(month-st.budget)} hr（爆工時）</b>`:(overT?`<b style="color:var(--warn)">⚠ 超過目標 ${n(month-S.target)} hr，但還在可用時數內</b>`:`<b class="okc">✓ 在目標內，還剩 ${n(S.target-month)} hr 可以彈性排</b>`);
   return `<div class="kpi" style="margin-bottom:6px">
@@ -549,6 +656,7 @@ function staffSummary(mode){
     <div class="k"><small>換算 ${mm.m} 月（${mm.days} 天）</small><b class="${over?'bad':''}">${n(month)}</b> hr</div>
     <div class="k"><small>目標排班工時</small><b>${n(S.target)}</b> hr</div>
     <div class="k"><small>可用時數</small><b>${n(st.budget)}</b> hr</div>
+    ${peakK}
   </div><div style="margin-bottom:12px;font-size:18px">${stTxt}　<small class="muted">${how}</small></div>`;
 }
 function simpleStaff(box){
@@ -556,29 +664,91 @@ function simpleStaff(box){
   box.innerHTML=`<div class="muted" style="margin-bottom:8px">客戶原本的每天最少人數（照星期分）。</div>
   <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th style="text-align:left">職務</th><th>週一</th><th>週二～五、日</th><th>週六</th><th>平日換算人時</th><th style="text-align:left">怎麼算</th></tr></thead><tbody>
   ${S.staffing.map((s,i)=>`<tr><td style="text-align:left"><b>${esc(s.job)}</b></td>${['mon','wk','sat'].map(k=>`<td><input data-i="${i}" data-k="${k}" value="${esc(s[k])}" style="width:70px;font-size:18px;text-align:center;padding:4px;border:1.5px solid var(--line);border-radius:8px"></td>`).join('')}<td><b>${firstNum(s.wk)*PER_PERSON}</b></td><td style="text-align:left;white-space:normal;max-width:420px"><small>${esc(s.rule)}</small></td></tr>`).join('')}
-  </tbody></table></div>`;
+  </tbody><tfoot>${(()=>{ const ld=lastMonthDays(), tot=k=>S.staffing.reduce((a,s)=>a+firstNum(s[k]),0), K=['mon','wk','sat'];
+    return `<tr><td style="text-align:left">合計人數</td>${K.map(k=>`<td class="${tot(k)>ld[k].avg?'cmp-hi':''}">${tot(k)}</td>`).join('')}<td>${tot('wk')*PER_PERSON}</td><td></td></tr>
+    <tr class="ref"><td style="text-align:left">${NW.m} 月最低</td>${K.map(k=>`<td>${ld[k].min}</td>`).join('')}<td colspan="2" style="text-align:left"><small>上個月同一種日子（週一／平日／週六）實際上班人數</small></td></tr>
+    <tr class="ref"><td style="text-align:left">${NW.m} 月平均</td>${K.map(k=>`<td>${ld[k].avg}</td>`).join('')}<td colspan="2"></td></tr>`; })()}</tfoot></table></div>
+  <div class="muted" style="margin-top:8px;font-size:15px">簡易版是一整天的人數，所以跟上個月「同一種日子」一整天上班的人數比。<span class="cmp-hi" style="padding:1px 6px;border-radius:4px">紅底</span>＝比上個月平均還多，要注意會不會爆人時。<br>※ 上個月的人數是照班別算有排班的人，所以會比實際在場的人略多。</div>`;
 }
 function runs(arr){ const out=[]; let i=0; while(i<arr.length){ if(!arr[i]){ i++; continue; } let j=i; while(j+1<arr.length&&arr[j+1]===arr[i]) j++; out.push({a:i,b:j+1,n:arr[i]}); i=j+1; } return out; }
+/* 上個月（本月 12 月）實際班表：每半小時上班人數的最低／平均，用來對標、避免爆人時 */
+function lastMonthSlots(){
+  const mm=NW, M=L.S.months[mm.key], per=[];
+  for(let d=1; d<=mm.days; d++){
+    const row=Array(L.NSLOT).fill(0);
+    D.employees.forEach(e=>{ const sh=L.shiftOf(M.sched[e.id][d-1]); if(!sh) return; const a=L.tm(sh.start); let z=L.tm(sh.end); if(z<=a) z+=1440;
+      for(let i=0;i<L.NSLOT;i++){ const t=L.SLOT0+i*30; if(t>=a && t<z) row[i]++; } });
+    per.push(row);
+  }
+  const min=[...Array(L.NSLOT)].map((_,i)=>Math.min(...per.map(r=>r[i])));
+  const avg=[...Array(L.NSLOT)].map((_,i)=>Math.round(per.reduce((x,r)=>x+r[i],0)/per.length*10)/10);
+  return {min,avg,mm};
+}
+function lastMonthDays(){ // 簡易版：照星期分的上班人數
+  const mm=NW, M=L.S.months[mm.key], cat=d=>{ const w=L.dow(d,mm); return w===1?'mon':(w===6?'sat':'wk'); }, by={mon:[],wk:[],sat:[]};
+  for(let d=1; d<=mm.days; d++) by[cat(d)].push(D.employees.filter(e=>L.isWork(M.sched[e.id][d-1])).length);
+  const r={}; Object.entries(by).forEach(([k,v])=>r[k]={min:Math.min(...v), avg:Math.round(v.reduce((a,b)=>a+b,0)/v.length*10)/10}); return r;
+}
+const cmpCls=(t,lm,i)=> t>lm.avg[i]?'cmp-hi':'';
 function hourStaff(box){
-  const S=L.S, PX=1.6, W=L.NSLOT*30*PX;
-  const hrs=[...Array(L.NSLOT/2)].map((_,i)=>L.SLOT0+i*60);
+  const S=L.S, PX=2.4, SW=30*PX, W=L.NSLOT*SW, LW=150;
   const total=[...Array(L.NSLOT)].map((_,i)=>L.SKILLS.reduce((a,s)=>a+(S.req[s][i]||0),0));
-  const manH = total.reduce((a,b)=>a+b,0)/2;
-  const peak = Math.max(...total);
-  box.innerHTML=`<div class="muted" style="margin-bottom:8px">每個技能在哪些時段要幾個人。點長條可以改時間和人數；點空白處可以新增一段。（照 Miro「關鍵職務／必要人力」）</div>
-  <div class="kpi" style="margin-bottom:10px"><div class="k"><small>全日必要人時</small><b>${manH}</b> 人時</div><div class="k"><small>最多同時</small><b>${peak}</b> 人</div></div>
-  <div class="tbl-wrap" style="max-height:none"><div style="width:${W+150}px">
-    <div style="display:flex;background:#f0f3f8;border-bottom:1.5px solid var(--line);position:sticky;top:0;z-index:3"><div style="width:150px;flex:none;padding:6px 10px;font-weight:700;position:sticky;left:0;background:#f0f3f8">技能</div>
-      <div style="position:relative;width:${W}px;height:34px">${hrs.map(m=>`<div style="position:absolute;left:${(m-L.SLOT0)*PX}px;top:6px;font-weight:700;font-size:15px;transform:translateX(-50%)">${L.fmt(m).slice(0,2)}</div>`).join('')}</div></div>
-    ${L.SKILLS.map(s=>`<div style="display:flex;border-bottom:1px solid #e3e6ec"><div style="width:150px;flex:none;padding:10px;position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${L.taskColor(s)};border:1px solid #999;vertical-align:-2px"></i> <b>${s}</b></div>
-      <div class="rq" data-s="${s}" style="position:relative;width:${W}px;height:52px;cursor:copy;background-image:repeating-linear-gradient(90deg,transparent 0,transparent ${60*PX-1}px,#e3e6ec ${60*PX-1}px,#e3e6ec ${60*PX}px)">
-      ${runs(S.req[s]).map(r=>`<div class="rqb" data-s="${s}" data-a="${r.a}" data-b="${r.b}" style="position:absolute;left:${r.a*30*PX}px;width:${(r.b-r.a)*30*PX}px;top:7px;height:38px;background:${L.taskColor(s)};border:1.5px solid rgba(0,0,0,.35);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;cursor:pointer;white-space:nowrap;overflow:hidden">${r.n} 人　<small>${fmtSlot(r.a)}～${fmtSlot(r.b)}</small></div>`).join('')}
+  const manH = total.reduce((a,b)=>a+b,0)/2, peak = Math.max(...total), lm=lastMonthSlots();
+  const grid=`background-image:repeating-linear-gradient(90deg,transparent 0,transparent ${SW-1}px,#eef0f4 ${SW-1}px,#eef0f4 ${SW}px),repeating-linear-gradient(90deg,transparent 0,transparent ${2*SW-1.5}px,#d5d9e1 ${2*SW-1.5}px,#d5d9e1 ${2*SW}px)`;
+  const numRow=(label,arr,cls,fn)=>`<div class="hs-row ${cls}"><div class="hs-lab">${label}</div><div style="position:relative;width:${W}px;height:34px">${arr.map((t,i)=>`<div class="hs-num ${fn?fn(t,i):''}" style="left:${i*SW}px;width:${SW}px">${t||''}</div>`).join('')}</div></div>`;
+  box.innerHTML=`<div class="muted" style="margin-bottom:8px">每個技能在哪些時段要幾個人，每格半小時。<b>拖長條中間＝整段移動；拖左右兩邊＝改開始／結束；在空白處拖一下＝新增一段</b>；點一下長條可以改人數。（照 Miro「關鍵職務／必要人力」）</div>
+  <div class="tbl-wrap" style="max-height:none"><div style="width:${W+LW}px">
+    <div class="hs-row hs-head"><div class="hs-lab">技能</div>
+      <div style="position:relative;width:${W}px;height:44px">${[...Array(L.NSLOT)].map((_,i)=>{ const full=i%2===0; return `<div class="hs-tick ${full?'h':''}" style="left:${i*SW}px;width:${SW}px">${full?fmtSlot(i).slice(0,2)+'<small>:00</small>':'<small>:30</small>'}</div>`; }).join('')}</div></div>
+    ${L.SKILLS.map(s=>`<div class="hs-row"><div class="hs-lab"><i style="background:${L.taskColor(s)}"></i> <b>${s}</b></div>
+      <div class="rq" data-s="${s}" style="position:relative;width:${W}px;height:52px;cursor:crosshair;touch-action:none;${grid}">
+      ${runs(S.req[s]).map(r=>`<div class="rqb" data-s="${s}" data-a="${r.a}" data-b="${r.b}" style="left:${r.a*SW}px;width:${(r.b-r.a)*SW}px;background:${L.taskColor(s)}"><i class="hl"></i><span>${r.n} 人　<small>${fmtSlot(r.a)}～${fmtSlot(r.b)}</small></span><i class="hr"></i></div>`).join('')}
       </div></div>`).join('')}
-    <div style="display:flex;background:#f7f8fb"><div style="width:150px;flex:none;padding:8px 10px;position:sticky;left:0;background:#f7f8fb;font-weight:700;border-right:1px solid var(--line)">全店合計</div>
-      <div style="position:relative;width:${W}px;height:36px">${total.map((t,i)=>`<div style="position:absolute;left:${i*30*PX}px;width:${30*PX}px;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700">${t||''}</div>`).join('')}</div></div>
-  </div></div>`;
-  box.querySelectorAll('.rqb').forEach(b=>b.onclick=ev=>{ ev.stopPropagation(); editRun(b.dataset.s, Number(b.dataset.a), Number(b.dataset.b)); });
-  box.querySelectorAll('.rq').forEach(r=>r.onclick=ev=>{ const rect=r.getBoundingClientRect(); const i=Math.max(0,Math.min(L.NSLOT-2,Math.floor((ev.clientX-rect.left)/(30*PX)))); editRun(r.dataset.s,i,i+2,true); });
+    ${numRow('合計人數',total,'hs-sum',(t,i)=>cmpCls(t,lm,i))}
+    ${numRow(`${lm.mm.m} 月最低`,lm.min,'hs-ref')}
+    ${numRow(`${lm.mm.m} 月平均`,lm.avg,'hs-ref')}
+  </div></div>
+  ${cmpNote(lm)}`;
+  bindRunDrag(box, SW);
+}
+function cmpNote(lm){ return `<div class="muted" style="margin-top:8px;font-size:15px">「${lm.mm.m} 月最低／平均」＝上個月實際班表，同一個時段上班的人數。<span class="cmp-hi" style="padding:1px 6px;border-radius:4px">紅底</span>＝合計比上個月平均還多，要注意會不會爆人時。<br>※ 上個月的人數是照班別起訖時間算，休息時間也算在內，所以數字會比實際在場的人略多。</div>`; }
+/* 依時段：拖拉移動／調整／新增 */
+function bindRunDrag(box, SW){
+  const S=L.S; let st=null;
+  const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+  const paint=()=>{ st.el.style.left=st.na*SW+'px'; st.el.style.width=(st.nb-st.na)*SW+'px'; const sp=st.el.querySelector('span'); if(sp) sp.innerHTML=`${st.n} 人　<small>${fmtSlot(st.na)}～${fmtSlot(st.nb)}</small>`; };
+  box.querySelectorAll('.rq').forEach(row=>{
+    row.addEventListener('pointerdown',ev=>{
+      if(ev.button>0) return;
+      const rect=row.getBoundingClientRect(), s=row.dataset.s, b=ev.target.closest('.rqb'), CW=SW*L.zoomF();
+      if(b){ const a=+b.dataset.a, z=+b.dataset.b; st={s,row,rect,CW,el:b,a,b:z,n:S.req[s][a],na:a,nb:z,x0:ev.clientX,moved:false,
+          kind: ev.target.classList.contains('hl')?'l':(ev.target.classList.contains('hr')?'r':'m')}; b.classList.add('drag'); }
+      else { const i=clamp(Math.floor((ev.clientX-rect.left)/CW),0,L.NSLOT-1); const el=document.createElement('div'); el.className='rqb drag';
+        el.style.background=L.taskColor(s); el.innerHTML='<span></span>'; row.appendChild(el);
+        st={s,row,rect,CW,el,kind:'new',i0:i,na:i,nb:i+1,n:1,x0:ev.clientX,moved:false}; paint(); }
+      row.setPointerCapture(ev.pointerId); ev.preventDefault();
+    });
+    row.addEventListener('pointermove',ev=>{
+      if(!st||st.row!==row) return;
+      if(Math.abs(ev.clientX-st.x0)>4) st.moved=true; if(!st.moved) return;
+      const dx=Math.round((ev.clientX-st.x0)/st.CW), len=st.b-st.a;
+      if(st.kind==='m'){ st.na=clamp(st.a+dx,0,L.NSLOT-len); st.nb=st.na+len; }
+      else if(st.kind==='l'){ st.na=clamp(st.a+dx,0,st.b-1); }
+      else if(st.kind==='r'){ st.nb=clamp(st.b+dx,st.a+1,L.NSLOT); }
+      else { const c=clamp(Math.floor((ev.clientX-st.rect.left)/st.CW),0,L.NSLOT-1); st.na=Math.min(st.i0,c); st.nb=Math.max(st.i0,c)+1; }
+      paint();
+    });
+    const end=ev=>{
+      if(!st||st.row!==row) return; const x=st; st=null;
+      if(!x.moved){ if(x.kind==='new'){ x.el.remove(); editRun(x.s,x.i0,Math.min(L.NSLOT,x.i0+2),true); } else { x.el.classList.remove('drag'); editRun(x.s,x.a,x.b); } return; }
+      const arr=S.req[x.s];
+      if(x.kind!=='new') for(let i=x.a;i<x.b;i++) arr[i]=0;
+      for(let i=x.na;i<x.nb;i++) arr[i]=x.n;
+      L.log('最少人力',`${x.s} ${x.kind==='new'?'新增':'拖拉'} ${fmtSlot(x.na)}～${fmtSlot(x.nb)}`,x.kind==='new'?'':`${fmtSlot(x.a)}～${fmtSlot(x.b)}`,`${x.n} 人`);
+      L.redraw();
+    };
+    row.addEventListener('pointerup',end); row.addEventListener('pointercancel',ev=>{ if(st&&st.row===row){ L.redraw(); st=null; } });
+  });
 }
 function editRun(s,a,b,isNew){
   const S=L.S, cur=isNew?1:S.req[s][a];
@@ -596,27 +766,123 @@ function editRun(s,a,b,isNew){
   });
 }
 function tableStaff(box){
-  const S=L.S;
+  const S=L.S, lm=lastMonthSlots();
   box.innerHTML=`<div class="muted" style="margin-bottom:8px">每個技能、每半小時最少要幾個人（照 GPT 版／Miro 表格版）。直接改數字，改完自動存。</div>
   <div class="tbl-wrap"><table class="g"><thead><tr><th class="sticky">技能</th>${[...Array(L.NSLOT)].map((_,i)=>`<th style="font-size:13px;padding:4px">${fmtSlot(i)}</th>`).join('')}<th>人時</th></tr></thead><tbody>
   ${L.SKILLS.map(s=>`<tr><td class="sticky"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${L.taskColor(s)};border:1px solid #999;vertical-align:-2px"></i> <b>${s}</b></td>${S.req[s].map((v,i)=>`<td style="padding:3px"><input class="req-in ${v?'nz':''}" data-s="${s}" data-i="${i}" value="${v||''}"></td>`).join('')}<td><b>${S.req[s].reduce((a,b)=>a+b,0)/2}</b></td></tr>`).join('')}
-  </tbody><tfoot><tr><td class="sticky">合計</td>${[...Array(L.NSLOT)].map((_,i)=>`<td>${L.SKILLS.reduce((a,s)=>a+(S.req[s][i]||0),0)||''}</td>`).join('')}<td>${L.SKILLS.reduce((a,s)=>a+S.req[s].reduce((x,y)=>x+y,0),0)/2}</td></tr></tfoot></table></div>`;
+  </tbody><tfoot><tr><td class="sticky">合計人數</td>${[...Array(L.NSLOT)].map((_,i)=>{ const t=L.SKILLS.reduce((a,s)=>a+(S.req[s][i]||0),0); return `<td class="${cmpCls(t,lm,i)}">${t||''}</td>`; }).join('')}<td>${L.SKILLS.reduce((a,s)=>a+S.req[s].reduce((x,y)=>x+y,0),0)/2}</td></tr>
+    <tr class="ref"><td class="sticky">${lm.mm.m} 月最低</td>${lm.min.map(v=>`<td>${v||''}</td>`).join('')}<td></td></tr>
+    <tr class="ref"><td class="sticky">${lm.mm.m} 月平均</td>${lm.avg.map(v=>`<td>${v||''}</td>`).join('')}<td></td></tr></tfoot></table></div>${cmpNote(lm)}`;
   box.querySelectorAll('.req-in').forEach(i=>i.onchange=()=>{ const v=Math.max(0,parseInt(i.value,10)||0); S.req[i.dataset.s][i.dataset.i]=v; L.log('最少人力',`${i.dataset.s} ${fmtSlot(Number(i.dataset.i))}`,'',`${v} 人`); L.redraw(); });
 }
 
 /* ============ 出勤檢核（示意，12 月今天以前） ============ */
+/* ============ 出勤檢核（整個月：小月曆看哪天還沒處理；加班累計） ============ */
+function hsh(a,b){ let x=Math.imul(a+1,73856093)^Math.imul(b+7,19349663); x=Math.imul(x^(x>>>13),1274126177); return (x^(x>>>16))>>>0; }
+const OT_LIMIT=40*60, OT_WARN=32*60;
+const ATT_DONE={'走請假':'已請假','補刷卡':'已補卡','加班申請':'已申請加班'}, ATT_TODO={'走請假':'還沒請假','補刷卡':'還沒補卡','加班申請':'還沒申請加班'};
+function attRow(mm, M, e, i, d, di, dout){
+  const code=M.sched[e.id][d-1], s=L.shiftOf(code); if(!s) return null;
+  const st=L.tm(s.start), en=L.tm(s.end), late=di>0?di:0, early=di<0?-di:0, over=dout>0?dout:0, leaveE=dout<0?-dout:0;
+  let ab=[], sug='', act=null, shift=0;
+  if(di===null){ ab.push('上班沒刷卡'); sug='補刷卡'; act='補刷卡'; }
+  else {
+    if(late) ab.push(`遲到 ${late} 分`); if(early) ab.push(`提早上班 ${early} 分`);
+    if(over) ab.push(`延後下班 ${over} 分`); if(leaveE) ab.push(`早退 ${leaveE} 分`);
+    if(late&&over) shift=Math.floor(Math.min(late,over)/30)*30;
+    if(early&&leaveE) shift=-Math.floor(Math.min(early,leaveE)/30)*30;
+    if(shift){ sug=`可以請假，或調整班表（上下班都${shift>0?'延後':'提前'} ${Math.abs(shift)} 分，工時不變）`; act='走請假'; }
+    else if(late||leaveE){ sug='請假'; act='走請假'; }
+    else if(over||early){ sug='加班申請'; act='加班申請'; }
+  }
+  if(!ab.length) return null;
+  return {e,i,d,code,s,di,dout,ab,sug,act,shift,k:`${mm.key}_${e.id}_${d}`,ak:e.id+'_'+d,inP:di===null?'—':L.fmt(st+di),outP:L.fmt(en+dout),newS:L.fmt(st+shift),newE:L.fmt(en+shift)};
+}
+/* 一整個月的異常（示範資料：依日期、人固定算出來；昨天放固定的 6 個情境） */
+function attMonth(mm){
+  const S=L.S, M=S.months[mm.key], t=L.today(), last=mm.kind==='now'?t.d-1:mm.days, byDay={};
+  const FIX=[[12,0],[44,45],[null,0],[0,45],[-30,-30],[0,-30]];
+  for(let d=1; d<=last; d++){
+    const ago=mm.kind==='now'?last-d:40, rows=[];
+    if(mm.kind==='now' && d===last){ let k=0; D.employees.forEach((e,i)=>{ if(k<FIX.length && L.shiftOf(M.sched[e.id][d-1])){ const r=attRow(mm,M,e,i,d,FIX[k][0],FIX[k][1]); k++; if(r) rows.push(r); } }); }
+    else D.employees.forEach((e,i)=>{
+      if(!L.shiftOf(M.sched[e.id][d-1]) || hsh(d+mm.m*40,i)%100>=8) return;
+      const r1=hsh(d,i*3), r2=hsh(i*5,d), kind=hsh(i,d+mm.m)%6; let di=0, dout=0;
+      if(kind===0) di=5+r1%25; else if(kind===1){ di=30+r1%25; dout=30+r2%30; } else if(kind===2) di=null;
+      else if(kind===3) dout=20+r2%40; else if(kind===4){ di=-(30+r1%20); dout=-(30+r2%20); } else dout=-(15+r2%30);
+      const r=attRow(mm,M,e,i,d,di,dout); if(!r) return;
+      if(mm.kind==='past' || hsh(d*3,i+11)%10 < (r.shift?(ago>=4?5:0):(ago>=4?9:ago>=2?6:ago>=1?4:1))) r.ext=ATT_DONE[r.act];   // 其他系統已經處理（過去月份都已結算）
+      rows.push(r);
+    });
+    rows.forEach(r=>{ if(S.att[r.k]==='調整班表') r.adjusted=true; r.pending=!r.ext&&!r.adjusted; });
+    byDay[d]=rows;
+  }
+  return {byDay,last};
+}
+const fmtHM=m=>`${Math.floor(m/60)} 小時${m%60?' '+(m%60)+' 分':''}`;
 route('/attendance',(main)=>{
-  const S=L.S, t=L.today(), d=t.d-1, M=S.months[NW.key];
-  const rows=D.employees.filter(e=>L.isWork(M.sched[e.id][d-1])).slice(0,6).map((e,i)=>{
-    const s=L.shiftOf(M.sched[e.id][d-1]);
-    const cases=[['遲到 18 分',L.fmt(L.tm(s.start)+18),s.end,'可調整班表解除異常'],['上班未刷卡','—',s.end,'補刷卡'],['延後下班 45 分',s.start,L.fmt(L.tm(s.end)+45),'加班申請'],['正常',s.start,s.end,''],['早退 30 分',s.start,L.fmt(L.tm(s.end)-30),'請假或調整班表'],['正常',s.start,s.end,'']][i];
-    return {e,s,c:cases};
-  }).filter(x=>x.c[0]!=='正常');
-  main.innerHTML=`<div class="top"><h2>出勤檢核</h2><span class="muted">昨天 ${NW.m}/${d}（${L.DOW[L.dow(d,NW)]}）（示意資料）</span></div>
-  <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th>姓名</th><th>班別</th><th>上班卡</th><th>下班卡</th><th>異常</th><th>建議</th><th>處理</th></tr></thead><tbody>
-  ${rows.map(x=>`<tr><td><b>${esc(x.e.name)}</b></td><td>${x.s.start}～${x.s.end}</td><td>${x.c[1]}</td><td>${x.c[2]}</td><td class="bad b">${x.c[0]}</td><td>${x.c[3]}</td><td><button class="btn sm">待處理</button></td></tr>`).join('')}
-  </tbody></table></div>
-  <ul class="note-below"><li>這頁還是示意，跟 Miro「出勤檢核」與 GPT 版一樣：差 30 分鐘以上或缺卡列為異常；加班累計之後補。</li></ul>`;
+  const S=L.S; S.att=S.att||{};
+  const mk=sessionStorage.getItem('lsp_attmk')||NW.key, mm=L.mon(mk)||NW, M=S.months[mm.key]; M.adj=M.adj||{};
+  const tab=sessionStorage.getItem('lsp_atttab')||'abn';
+  const {byDay,last}=attMonth(mm);
+  const pendAll=Object.values(byDay).flat().filter(r=>r.pending), pendDays=Object.values(byDay).filter(r=>r.some(x=>x.pending)).length;
+  const head=`<div class="sh"><div class="sh-r1"><div class="seg big">${[['abn','⚠️ 出勤異常'],['ot','⏱ 加班累計']].map(([k,t])=>`<button data-atab="${k}" class="${tab===k?'on':''}">${t}</button>`).join('')}</div><div class="spacer"></div><span class="muted">（示意資料）</span></div>
+    <div class="sh-r2"><div class="sh-left"><div class="sh-line">${L.monthPick(mm.key,'data-amk',['past','now'])}${mm.kind==='past'?'<span class="pill sent">已結束・只能看</span>':''}</div></div></div></div>`;
+  const bindHead=()=>{ main.querySelectorAll('[data-atab]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_atttab',b.dataset.atab); L.redraw(); });
+    main.querySelectorAll('[data-amk]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_attmk',b.dataset.amk); L.redraw(); }); };
+
+  if(tab==='ot'){ // ---- 加班累計 ----
+    const ot={}; D.employees.forEach((e,i)=>{ let m=0; for(let d=1; d<=last; d++){ if(!L.shiftOf(M.sched[e.id][d-1])) continue; m+= i===1?118 : (i===4?100 : hsh(d,i)%5); }
+      Object.values(byDay).flat().filter(r=>r.e.id===e.id).forEach(r=>{ if(r.di===null) return; let x=Math.max(0,r.dout)+Math.max(0,-r.di); if(r.adjusted) x=Math.max(0,x-Math.abs(r.shift)*2); m+=x; }); ot[e.id]=m; });
+    const list=D.employees.filter(L.empFilterFn()).sort((a,b)=>ot[b.id]-ot[a.id]), total=Object.values(ot).reduce((a,b)=>a+b,0);
+    main.innerHTML=head+`<div class="sh-line" style="margin-bottom:10px">${L.empFilterBar()}<div class="spacer"></div><b style="font-size:20px">全店加班合計：${fmtHM(total)}</b></div>
+    <div class="banner blue">依提早上班和延後下班的打卡分鐘累計（${mm.m}/1～${mm.m}/${last}）；沒刷卡要補卡後才算。<b>累計到 40 小時變紅，不能再加班</b>；32 小時以上黃色提醒。</div>
+    <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th style="text-align:left">姓名</th><th>職稱・組別</th><th style="min-width:240px">累計加班</th><th>還可加班</th><th style="text-align:left">提醒</th></tr></thead><tbody>
+    ${list.map(e=>{ const m=ot[e.id], over=m>=OT_LIMIT, near=!over&&m>=OT_WARN;
+      return `<tr class="${over?'ot-over':(near?'ot-near':'')}"><td style="text-align:left"><b>${esc(e.name)}</b> <small class="muted">${e.id}</small></td><td>${e.title}・${e.group||'未選組別'}</td><td style="text-align:left"><b>${fmtHM(m)}</b><div class="ot-bar"><i style="width:${Math.min(100,m/OT_LIMIT*100)}%;${over?'background:#e02424':(near?'background:#f5a524':'')}"></i></div></td><td><b>${over?'0 小時':fmtHM(OT_LIMIT-m)}</b></td><td style="text-align:left">${over?'<b>已達 40 小時，不能再加班</b>':(near?`<b style="color:#b54708">快到上限，只剩 ${fmtHM(OT_LIMIT-m)}</b>`:'<span class="muted">—</span>')}</td></tr>`; }).join('')}
+    </tbody></table></div>`;
+    bindHead(); L.bindEmpFilter(main); return;
+  }
+
+  // ---- 出勤異常：左邊小月曆、右邊那一天的明細 ----
+  let sd=Number(sessionStorage.getItem('lsp_attd_'+mm.key)); if(!(sd>=1&&sd<=last)){ const pd=Object.keys(byDay).map(Number).filter(d=>byDay[d].some(r=>r.pending)); sd=pd.length?pd[pd.length-1]:last; }
+  const lead=(mm.fd+6)%7, rows=byDay[sd]||[], past=mm.kind==='past';
+  let cal=['一','二','三','四','五','六','日'].map(x=>`<div class="h">${x}</div>`).join('')+'<div></div>'.repeat(lead);
+  for(let d=1; d<=mm.days; d++){ if(d>last){ cal+=`<div class="att-day fut">${d}</div>`; continue; }
+    const r=byDay[d], p=r.filter(x=>x.pending).length; cal+=`<button class="att-day ${d===sd?'on':''}" data-ad="${d}">${d}${p?`<span class="cnt">${p}</span>`:(r.length?'<span class="ok">✓</span>':'')}</button>`; }
+  const pend=rows.filter(r=>r.pending).length;
+  main.innerHTML=head+`<div class="att-wrap">
+    <div class="att-cal"><div class="b" style="text-align:center;font-size:19px;margin-bottom:8px">${mm.y} 年 ${mm.m} 月</div><div class="g7">${cal}</div>
+      </div>
+    <div class="att-side">
+      <div class="muted" style="font-size:16px"><span class="cnt-dot">●</span> 紅色數字＝那天還沒處理的筆數<br>✓＝那天都處理好了<br>點日子看下面的明細</div>
+      <div class="att-sum"><small>${mm.m} 月還沒處理</small><b class="${pendAll.length?'bad':'okc'}">${pendAll.length}</b> 筆，分在 <b>${pendDays}</b> 天</div>
+      <div class="att-sum"><small>現在看</small><b>${mm.m}/${sd}（${L.DOW[L.dow(sd,mm)]}）</b><br>異常 ${rows.length} 筆　${pend?`<span class="st-pill todo">還沒處理 ${pend} 筆</span>`:(rows.length?'<span class="st-pill done">✓ 都處理好了</span>':'')}</div>
+    </div></div>
+    <div>
+      <div class="tbl-wrap"><table class="g" style="width:100%"><thead><tr><th style="text-align:left">姓名</th><th>班別</th><th>上班卡</th><th>下班卡</th><th>異常</th><th style="text-align:left">建議</th><th>調整班表</th><th>處理</th></tr></thead><tbody>
+      ${rows.map(x=>{
+        const adjCell=!x.shift?'<span class="muted">—</span>':`<div class="adj-info ${x.adjusted||x.ext?'done':''}"><b>${x.shift>0?'⏩ 上下班都延後':'⏪ 上下班都提前'} ${Math.abs(x.shift)} 分</b><br>${x.s.start}～${x.s.end} → <b>${x.newS}～${x.newE}</b></div>`;
+        let doCell;
+        if(x.adjusted) doCell=`<span class="st-pill done">✓ 已調整班表</span>${past?'':`<br><button class="btn sm" data-undo="${x.k}" style="margin-top:4px">復原</button>`}`;
+        else if(x.ext) doCell=`<span class="st-pill done">✓ ${x.ext}</span>`;
+        else if(x.shift && !past) doCell=`<button class="btn pri" data-adj="${x.k}">調整班表</button><div class="muted" style="font-size:14px;margin-top:4px">或員工去請假</div>`;
+        else doCell=`<span class="st-pill todo">${ATT_TODO[x.act]}</span>`;
+        return `<tr class="${x.pending?'':'att-done'}"><td style="text-align:left"><b>${esc(x.e.name)}</b><br><small class="muted">${x.e.title}</small></td><td>${x.s.start}～${x.s.end}<br><small class="muted">${x.code} ${L.hrsTag(x.code)}</small></td><td>${x.inP}</td><td>${x.outP}</td><td class="bad b">${x.ab.join('<br>')}</td><td style="text-align:left;white-space:normal;max-width:280px">${x.sug}</td><td>${adjCell}</td><td>${doCell}</td></tr>`; }).join('')||'<tr><td colspan="8" class="muted" style="padding:20px">這天沒有異常</td></tr>'}
+      </tbody></table></div>
+    </div>
+  <ul class="note-below"><li>這個系統只能「調整班表」：遲到又延後下班（或提早上班又早退）時，按「調整班表」把那天的上下班時間一起往後（往前）移，工時不變，異常就解除；以 30 分為單位（例：遲到 44 分、晚走 45 分 → 延後 30 分）。調整後月班表那一格會標「調」。</li>
+    <li>請假、補刷卡、加班申請在其他系統辦；辦好後這裡會自動顯示「✓ 已請假」「✓ 已補卡」「✓ 已申請加班」（示範資料）。</li>${past?'<li>過去的月份已經結算，只能看，不能調整班表。</li>':''}</ul>`;
+  bindHead();
+  main.querySelectorAll('[data-ad]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_attd_'+mm.key,b.dataset.ad); L.redraw(); });
+  const byK=k=>rows.find(x=>x.k===k);
+  main.querySelectorAll('[data-adj]').forEach(b=>b.onclick=()=>{ const x=byK(b.dataset.adj);
+    modal(`<h3>調整 ${esc(x.e.name)} ${mm.m}/${sd} 的班</h3><div style="font-size:20px;margin:10px 0">${x.s.start}～${x.s.end} → <b>${x.newS}～${x.newE}</b></div><div class="muted">上下班都${x.shift>0?'延後':'提前'} ${Math.abs(x.shift)} 分，工時不變。調整後異常解除。</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn" data-x>取消</button><button class="btn pri" data-ok>確定調整</button></div>`,(m,close)=>{
+      m.querySelector('[data-x]').onclick=close;
+      m.querySelector('[data-ok]').onclick=()=>{ M.adj[x.ak]={start:x.newS,end:x.newE}; S.att[x.k]='調整班表'; L.log('出勤',`調整班表 ${x.e.name} ${mm.m}/${sd}`,`${x.s.start}～${x.s.end}`,`${x.newS}～${x.newE}`); L.save(); close(); toast('已調整班表',`${x.e.name} ${mm.m}/${sd} 改成 ${x.newS}～${x.newE}，月班表那一格會標「調」。`,'info'); L.redraw(); };
+    }); });
+  main.querySelectorAll('[data-undo]').forEach(b=>b.onclick=()=>{ const x=byK(b.dataset.undo); delete M.adj[x.ak]; delete S.att[x.k]; L.log('出勤',`復原調整 ${x.e.name} ${mm.m}/${sd}`); L.save(); L.redraw(); });
 });
 
 /* ============ 異動紀錄 ============ */

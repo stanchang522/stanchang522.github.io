@@ -9,7 +9,8 @@ const snap=m=>Math.round(m/SNAP)*SNAP;
 // 依技能順位分工作：① 的工作在他上班時段還缺人就做 ①，① 已經夠了才看 ②、③…
 function slotsOf(start,len){ const out=[]; for(let i=0;i<L.NSLOT;i++){ const t=L.SLOT0+i*30; if(t>=start && t<start+len) out.push(i); } return out; }
 function mainTask(e, start, len, cov){
-  const sk=(L.S.skills[e.id]||[]).filter(t=>L.S.tasks.some(x=>x.name===t));
+  let sk=(L.S.skills[e.id]||[]).filter(t=>L.S.tasks.some(x=>x.name===t));
+  if(!sk.length) sk=(e.skills||[]).filter(t=>L.S.tasks.some(x=>x.name===t));   // 還沒設定技能：先用歷史資料的技能
   if(!sk.length) return '乾貨人力';
   const sl=slotsOf(start,len);
   const t = sk.find(t=>sl.some(i=>(cov[t]?.[i]||0) < (L.S.req[t]?.[i]||0))) || sk[0];
@@ -88,7 +89,7 @@ function taskAt(row, minuteAbs){ let acc=row.start; for(const s of row.segs){ if
 L.route('/day',(main, r)=>{
   const S=L.S;
   MM=L.curMon(); M=MM.m; DAYS=MM.days; MS=L.curM();
-  if(!MS.generated){ main.innerHTML=`<div class="top"><h2>智能排班</h2></div>${L.monthBar()}<div class="empty-page">${M} 月班表還沒產生。<br><br><a class="btn pri" href="#/schedule">去準備跑班表</a></div>`; L.bindMonthBar(main,'#/day'); return; }
+  if(!MS.generated){ main.innerHTML=`<div class="top"><h2>${L.modeTitle()}</h2></div>${L.monthBar()}<div class="empty-page">${M} 月班表還沒產生。<br><br><a class="btn pri" href="#/schedule">去準備跑班表</a></div>`; L.bindMonthBar(main,'#/day'); return; }
   const t0=L.today(), defD = MM.key===t0.mm.key ? t0.d : 1;
   let d=Number((r.split('/')[2])||sessionStorage.getItem('lsp_day_'+MM.key)||defD); if(!(d>=1&&d<=DAYS)) d=defD;
   sessionStorage.setItem('lsp_day_'+MM.key,d);
@@ -99,18 +100,11 @@ L.route('/day',(main, r)=>{
   const W=(T1-T0)*PX;
   const hours=[]; for(let m=T0;m<T1;m+=60) hours.push(m);
   const dw=L.dow(d);
-  main.innerHTML=`<div class="top"><h2>智能排班</h2></div>${L.monthBar()}
-  <div class="top"><h2 style="font-size:26px">${MM.y} 年 ${M} 月班表</h2>${L.statusPill(MS,MM)}<div class="spacer"></div><button class="btn" id="redo" ${sent?'disabled':''}>這天重新分配</button></div>
-  ${L.schedTabs('d')}
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-    <button class="btn" id="prev" ${d<=1?'disabled':''}>◀ 前一天</button>
-    <div style="font-size:26px;font-weight:700;min-width:190px;text-align:center">${M}/${d}（${L.DOW[dw]}）</div>
-    <button class="btn" id="next" ${d>=DAYS?'disabled':''}>後一天 ▶</button>
-    <span class="muted">${ids.length===allIds.length?`${ids.length} 人上班`:`顯示 ${ids.length} 人／全店 ${allIds.length} 人上班`}</span>
-    <div class="spacer"></div>
-    <select class="sel-big" id="pickDay" style="font-size:18px">${[...Array(DAYS)].map((_,i)=>`<option value="${i+1}" ${i+1===d?'selected':''}>${M}/${i+1}（${L.DOW[L.dow(i+1)]}）</option>`).join('')}</select>
-  </div>
-  ${L.empFilterBar()}
+  main.innerHTML=L.schedHead('d',{
+    line1:`${L.statusPill(MS,MM)}<span class="lbl" style="margin-left:10px">日期</span><button class="btn sm" id="prev" ${d<=1?'disabled':''}>◀</button><select class="sel-big" id="pickDay" style="font-size:19px;font-weight:700">${[...Array(DAYS)].map((_,i)=>`<option value="${i+1}" ${i+1===d?'selected':''}>${M}/${i+1}（${L.DOW[L.dow(i+1)]}）</option>`).join('')}</select><button class="btn sm" id="next" ${d>=DAYS?'disabled':''}>▶</button><span class="muted">${ids.length===allIds.length?`${ids.length} 人上班`:`顯示 ${ids.length}／全店 ${allIds.length} 人上班`}</span>`,
+    line2:`<div class="sh-line">${L.empFilterBar()}</div>`,
+    right:`<button class="btn" id="redo" ${sent?'disabled':''}>這天重新分配</button>`
+  })+`
   ${sent?`<div class="banner blue">${MM.kind==='past'?'這是過去的月份，只能看。':'月班表已送出，日作業表是唯讀。要改請到月班表按「✎ 編輯」。'}</div>`:`
   <div class="card" id="palette" style="padding:14px 16px;position:sticky;top:0;z-index:20">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -134,7 +128,7 @@ L.route('/day',(main, r)=>{
         return `<div class="blk" data-id="${id}" data-i="${i}" title="${esc(g.t)} ${L.fmt(acc-g.d)}～${L.fmt(acc)}" style="position:absolute;left:${left}px;top:6px;width:${w}px;height:44px;background:${known?known.color:'#ddd'};border:1.5px solid rgba(0,0,0,.35);border-radius:8px;overflow:hidden;white-space:nowrap;font-size:${w<50?12:15}px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:${sent?'default':'grab'};user-select:none;touch-action:none">${esc(known?g.t:g.t+'(已刪除)')}${sent?'':'<div class="rz" style="position:absolute;right:0;top:0;bottom:0;width:10px;cursor:ew-resize;background:rgba(0,0,0,.12)"></div>'}</div>`;}).join('');
       const sx=(row.start-T0)*PX, sw=row.len*PX;
       return `<div style="display:flex;border-bottom:1px solid #e3e6ec">
-        <div style="width:190px;flex:none;padding:6px 10px;position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)"><b>${esc(e.name)}</b> <small class="muted">${e.group}</small><br><small><b>${row.code}</b> ${s.start}～${s.end}</small></div>
+        <div style="width:190px;flex:none;padding:6px 10px;position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)"><b>${esc(e.name)}</b> <small class="muted">${e.group}</small><br><small><b>${row.code}</b> ${s.start}～${s.end} <span class="muted">${L.hrsTag(row.code)}</span></small></div>
         <div class="trow" data-id="${id}" style="position:relative;width:${W}px;height:56px;background:#eceef2">
           <div style="position:absolute;left:${sx}px;width:${sw}px;top:0;bottom:0;background:#fff;background-image:repeating-linear-gradient(90deg,transparent 0,transparent ${60*PX-1}px,#e3e6ec ${60*PX-1}px,#e3e6ec ${60*PX}px);background-position:${-((row.start-T0)%60)*PX}px 0"></div>
           ${blocks}
@@ -188,21 +182,21 @@ function bindDrag(main, d, p){
   }
   function target(ev, dr){
     dr=dr||drag;
-    const el=document.elementFromPoint(ev.clientX,ev.clientY);
-    if(!el) return null;
-    if(el.closest('#trash')) return {trash:true};
-    const tr=el.closest('.trow'); if(!tr) return null;
+    // 用每一列的位置判斷（字體放大時 elementFromPoint 會不準）
+    const inside=el=>{ if(!el) return false; const r=el.getBoundingClientRect(); return ev.clientX>=r.left&&ev.clientX<=r.right&&ev.clientY>=r.top&&ev.clientY<=r.bottom; };
+    if(inside(document.getElementById('trash'))) return {trash:true};
+    const tr=[...document.querySelectorAll('#main .trow')].find(inside); if(!tr || inside(tr.previousElementSibling) || inside(document.getElementById('palette'))) return null;   // 被固定的姓名欄、工作列擋住就不算
     const row=p[tr.dataset.id]; const rect=tr.getBoundingClientRect();
-    const abs=T0+(ev.clientX-rect.left-(dr.grab||0))/PX;
+    const abs=T0+(ev.clientX-rect.left-(dr.grab||0))/(PX*L.zoomF());
     const off=snap(abs-row.start);
     return {tr,id:tr.dataset.id,row,off};
   }
   function move(ev){
     if(!drag) return;
     if(!drag.moved){ if(Math.abs(ev.clientX-drag.x0)+Math.abs(ev.clientY-drag.y0)<5) return; drag.moved=true; mkGhost(); }
-    ghost.style.left=(ev.clientX-(drag.grab||0))+'px'; ghost.style.top=(ev.clientY-22)+'px';
+    const zf=L.zoomF(); ghost.style.left=(ev.clientX-(drag.grab||0))/zf+'px'; ghost.style.top=(ev.clientY/zf-22)+'px';
     if(drag.kind==='resize'){
-      const row=p[drag.id]; const nd=Math.max(SNAP,snap(drag.d0+(ev.clientX-drag.x0)/PX));
+      const row=p[drag.id]; const nd=Math.max(SNAP,snap(drag.d0+(ev.clientX-drag.x0)/(PX*L.zoomF())));
       ghost.style.display='none'; drag.el.style.width=(nd*PX)+'px'; drag.nd=nd; return;
     }
     const tg=target(ev); marker.remove();
