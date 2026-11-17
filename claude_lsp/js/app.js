@@ -4,16 +4,17 @@ const D = window.LSP_DATA;
 const KEY = 'lsp_v2_demo_state';
 const VER = 5;
 const DEFAULT_TASKS = [
-  {name:'管理',     color:'#c6dcff'},
-  {name:'值班',     color:'#ffd6a5'},
-  {name:'收銀',     color:'#ffe999'},
-  {name:'乾貨人力', color:'#adf0c7'},
-  {name:'生鮮擔當', color:'#f4a6a6'},
-  {name:'生鮮人力', color:'#ffd6d6'},
-  {name:'熟食擔當', color:'#c9a7f0'},
-  {name:'熟食人力', color:'#e9dcfb'},
+  {name:'管理',     color:'#9cc2ff'},
+  {name:'值班',     color:'#c6dcff'},
+  {name:'收銀',     color:'#c9a7f0'},
+  {name:'乾貨人力', color:'#e9dcfb'},
+  {name:'生鮮擔當', color:'#7fd9a4'},
+  {name:'生鮮人力', color:'#adf0c7'},
+  {name:'熟食擔當', color:'#ffb870'},
+  {name:'熟食人力', color:'#ffd6a5'},
   {name:'休息',     color:'#e2e2e2'}
 ];
+const OLD_COLORS={'管理':'#c6dcff','值班':'#ffd6a5','收銀':'#ffe999','乾貨人力':'#adf0c7','生鮮擔當':'#f4a6a6','生鮮人力':'#ffd6d6','熟食擔當':'#c9a7f0','熟食人力':'#e9dcfb'};
 const SKILLS = DEFAULT_TASKS.filter(t=>t.name!=='休息').map(t=>t.name);
 // 示範的三個月：11 月過去、12 月本月、1 月下個月（準備預排）
 const MONTHS = [
@@ -58,7 +59,7 @@ function freshState(){
   const shifts = {}; Object.entries(D.shifts).forEach(([c,s])=>shifts[c]={...s});
   const mk=(sched,status)=>({generated:!!sched, status, sched:sched||{}, changed:{}, dayPlans:{}});
   return {
-    v:VER, role:'store', cur:NOW.key,
+    v:VER, colorV:2, role:'store', cur:NOW.key,
     months:{ [MONTHS[0].key]:mk(nov,'sent'), [NOW.key]:mk(mapFromNov(NOW),'sent'), [NEXT.key]:mk(null,'unsaved') },
     target: Math.round(D.store.budget*0.95),
     leave:{ phase:'setting', days:2, noLeave:[], reqs:leaveReqs(), returned:{}, special:{} },
@@ -72,7 +73,7 @@ function freshState(){
 }
 let S;
 function load(){
-  try{ const s = JSON.parse(localStorage.getItem(KEY)||'null'); if(s && s.v===VER){ S=s; return; } }catch(e){}
+  try{ const s = JSON.parse(localStorage.getItem(KEY)||'null'); if(s && s.v===VER){ S=s; if(!S.colorV){ S.colorV=2; S.tasks.forEach(t=>{ const d=DEFAULT_TASKS.find(x=>x.name===t.name); if(d && OLD_COLORS[t.name]===t.color) t.color=d.color; }); save(); } return; } }catch(e){}
   S = freshState();
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -161,6 +162,17 @@ function toast(title, body, kind){
 }
 function taskColor(name){ const t=S.tasks.find(x=>x.name===name); return t?t.color:'#eeeeee'; }
 // 月份切換列
+
+/* ---- 員工篩選（月班表、日作業表共用）：全部／各組別／正職／兼職 ---- */
+const EF_GROUPS=['管理','值班','乾貨','生鮮','熟食'];
+function empF(){ try{ return sessionStorage.getItem('lsp_empf')||'all'; }catch(e){ return 'all'; } }
+function empFilterFn(f){ f=f||empF(); return e=> f==='all' || (f==='ft'&&e.ft) || (f==='pt'&&!e.ft) || f==='g:'+e.group; }
+function empFilterBar(){
+  const f=empF(), n=fn=>D.employees.filter(fn).length;
+  const opts=[['all','全部',D.employees.length], ...EF_GROUPS.filter(g=>n(e=>e.group===g)).map(g=>['g:'+g,g,n(e=>e.group===g)]), ['ft','正職',n(e=>e.ft)], ['pt','兼職',n(e=>!e.ft)]];
+  return `<div class="empf"><b>看哪些人：</b>${opts.map(([k,t,c],i)=>`${k==='ft'?'<span class="empf-sep"></span>':''}<button class="chip-btn ${f===k?'on':''}" data-empf="${k}">${t} <small>${c}</small></button>`).join('')}</div>`;
+}
+function bindEmpFilter(root){ root.querySelectorAll('[data-empf]').forEach(b=>b.onclick=()=>{ try{ sessionStorage.setItem('lsp_empf',b.dataset.empf); }catch(e){} redraw(); }); }
 function monthBar(onPick){
   return `<div class="mbar">${MONTHS.map(x=>{ const M=S.months[x.key];
     const st = !M.generated?'還沒產生':(M.status==='sent'?'已送出':'草稿');
@@ -233,6 +245,7 @@ const redraw = ()=>go(location.hash, true);
 window.addEventListener('hashchange',()=>go(location.hash));
 
 window.LSP = {D, get S(){return S;}, save, log, tm, fmt, span, netH, breakH, isWork, shiftOf, dow, DOW, emp,
+  empF, empFilterFn, empFilterBar, bindEmpFilter,
   laborCheck, monthHours, totalHours, $, h, esc, modal, toast, taskColor, route, go, redraw, SKILLS,
   MONTHS, NEXT, NOW, mon, curMon, curM, prevM, today, todayStr, monthBar, bindMonthBar, mapFromNov, SLOT0, NSLOT,
   start(){ load(); go(location.hash||'#/month'); }};

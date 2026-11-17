@@ -135,7 +135,8 @@ route('/month', (main)=>{
   const wkEnd=d=>L.dow(d,mm)===6||d===mm.days;
   const wkStart=d=>{ let x=d; while(x>1 && L.dow(x-1,mm)!==6) x--; return x; };
   const head = days.map(d=>`<th class="${L.dow(d,mm)%6===0?'wk-sun':''}" style="${isToday(d)?'background:#fff6b6':''}">${d}<br><small>${isToday(d)?'今天':L.DOW[L.dow(d,mm)]}</small></th>`+(wkEnd(d)?`<th class="wkh">週<br>工時</th>`:'')).join('');
-  const rows = sortEmps(D.employees,'group').map(e=>{
+  const ef=L.empF(), EMP=D.employees.filter(L.empFilterFn(ef)), fl=ef!=='all';
+  const rows = sortEmps(EMP,'group').map(e=>{
     const lim=e.ft?48:40;
     const cells = days.map(d=>{
       const c=M.sched[e.id][d-1]; const sh=L.shiftOf(c);
@@ -148,8 +149,8 @@ route('/month', (main)=>{
   }).join('');
   function wkCell(e,d,lim){ const h=M.sched[e.id].slice(wkStart(d)-1,d).reduce((a,c)=>a+L.netH(c),0); const full=d-wkStart(d)+1===7;
     return `<td class="wkc ${h>lim?'over':''}" title="${mm.m}/${wkStart(d)}～${mm.m}/${d}${full?'':'（不滿一週）'}，上限 ${lim} 小時">${h}</td>`; }
-  const cnt = days.map(d=>D.employees.filter(e=>L.isWork(M.sched[e.id][d-1])).length);
-  const wkTot = d=>D.employees.reduce((a,e)=>a+M.sched[e.id].slice(wkStart(d)-1,d).reduce((x,c)=>x+L.netH(c),0),0);
+  const cnt = days.map(d=>EMP.filter(e=>L.isWork(M.sched[e.id][d-1])).length);
+  const wkTot = d=>EMP.reduce((a,e)=>a+M.sched[e.id].slice(wkStart(d)-1,d).reduce((x,c)=>x+L.netH(c),0),0);
   main.insertAdjacentHTML('beforeend',`
   <div class="top"><h2 style="font-size:26px">${mm.y} 年 ${mm.m} 月班表</h2>${statusPill(M,mm)}<div class="spacer"></div>
     <button class="btn" id="law">⚖ 勞基法檢核</button>
@@ -163,17 +164,19 @@ route('/month', (main)=>{
     <div class="spacer"></div>
     <div style="align-self:center">顯示：<button class="btn sm ${mode==='code'?'soft':''}" data-mode="code">班別名稱</button> <button class="btn sm ${mode==='time'?'soft':''}" data-mode="time">時間</button></div>
   </div>
+  ${L.empFilterBar()}
   ${past?'<div class="banner blue">這是過去的月份，只能看，不能改。</div>':(sent?`<div class="banner blue">已送出，班表是唯讀。${mm.kind==='now'?'本月要調班':'要修改'}請按右上「✎ 編輯」，班表會回到草稿，改完要再送出。</div>`:'')}
   <div class="tbl-wrap ${ro?'ro':''}"><table class="g"><thead><tr><th class="sticky">姓名</th><th>總工時</th>${head}</tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td class="sticky">上班人數</td><td></td>${cnt.map((c,i)=>`<td>${c}</td>`+(wkEnd(i+1)?`<td class="wkc">${n(wkTot(i+1))}</td>`:'')).join('')}</tr></tfoot></table></div>
+    <tfoot><tr><td class="sticky">上班人數${fl?'<br><small class="muted">（只算篩選的人）</small>':''}</td><td></td>${cnt.map((c,i)=>`<td>${c}</td>`+(wkEnd(i+1)?`<td class="wkc">${n(wkTot(i+1))}</td>`:'')).join('')}</tr></tfoot></table></div>
   <div class="legend" style="margin-top:10px"><span><i style="background:#ffe9e9"></i>例假</span><span><i style="background:#f3f3f3"></i>休假</span><span><i style="background:#dbe9c4"></i>支援／受訓／育嬰</span><span><i style="background:#fafafa"></i>不排（兼職）</span><span><i style="outline:3px solid var(--bad)"></i>勞基法問題（不能送出）</span><span><i style="outline:3px dashed var(--warn)"></i>提醒</span><span><i style="box-shadow:inset 0 -5px 0 var(--warn)"></i>手動改過</span><span><i style="background:#fff3b0"></i>週工時（正職超過 48、兼職超過 40 變紅）</span></div>
   <ul class="note-below">
+    <li>上面「看哪些人」可以只看某一組、正職或兼職；上方的已排班工時、勞基法檢核還是算全店。</li>
     <li>點格子可以改班別、休假。每改一格就做第一層勞基法檢查（六休一、每週例假、兩班間隔 11 小時、週工時），有問題只跳提醒、格子框紅，<b>不會擋住</b>。</li>
     <li>「儲存草稿」可以存很多次；有還沒存的修改時「送出」是灰的。送出時再做一次完整檢查，六休一、兩班間隔有問題就不能送出；每週例假、週工時超過先只提醒（原始班表用雙週變形、兼職可超排，規則待確認）。</li>
     <li>已送出後按「✎ 編輯」→ 回到草稿，總部報表回到「排班中」。</li>
   </ul>`);
-  bindTabs(main);
+  bindTabs(main); L.bindEmpFilter(main);
   main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_mode',b.dataset.mode); L.redraw(); });
   main.querySelector('#law').onclick=()=>showIssues(issues,false,mm);
   if(past) return;
@@ -349,8 +352,71 @@ function leaveReview(box){
 }
 
 /* ============ 員工技能（排序＋分組） ============ */
+const GROUP_SKILLS={'管理':['管理','值班','收銀'],'值班':['值班','收銀','乾貨人力'],'乾貨':['乾貨人力','收銀'],'生鮮':['生鮮擔當','生鮮人力','收銀'],'熟食':['熟食擔當','熟食人力','收銀']};
 route('/skills',(main)=>{
   const S=L.S;
+  const mode = sessionStorage.getItem('lsp_skmode')||'table';   // table | person
+  const order=a=>a.map((x,i)=>`${i+1}.${x}`).join(' ')||'無';
+  const changed=(e,before)=>{ Object.values(S.months).forEach(M=>M.dayPlans={}); L.log('技能',`${e.name} 技能順位`,before,order(S.skills[e.id])); L.redraw(); };
+  const head=`<div class="top"><h2>員工技能</h2><span class="muted">設定每個人會做的工作和順位：① 最優先。日作業表先分 ① 的工作，① 人夠了才分 ②</span></div>
+  <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><b>畫面：</b>
+    <div class="seg-toggle">${[['table','📋 表格設定'],['person','👤 列表設定']].map(([k,t])=>`<button data-mode="${k}" class="${mode===k?'on':''}">${t}</button>`).join('')}</div>
+    <span style="flex:1"></span><button class="btn" id="skClear" style="border-color:var(--bad);color:var(--bad)">🗑️ 清空全部技能</button></div>`;
+  const bindHead=()=>{
+    main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skmode',b.dataset.mode); L.redraw(); });
+    main.querySelector('#skClear').onclick=()=>modal(`<h3>清空全部技能？</h3><div class="b">全部 ${D.employees.length} 位員工的技能和順位都會清掉，要重新一個一個設定。</div><div class="muted" style="margin-top:6px">清空後日作業表沒辦法自動分工。不小心按到，可以按左下「重設示範資料」恢復。</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px"><button class="btn" data-x>不要</button><button class="btn" data-ok style="background:var(--bad);border-color:var(--bad);color:#fff">確定清空</button></div>`,(m,close)=>{
+      m.querySelector('[data-x]').onclick=close;
+      m.querySelector('[data-ok]').onclick=()=>{ D.employees.forEach(e=>S.skills[e.id]=[]); Object.values(S.months).forEach(M=>M.dayPlans={}); L.log('技能','清空全部員工技能','','全部清空'); close(); L.toast('已清空全部技能'); L.redraw(); };
+    });
+  };
+
+  /* ---- 模式二：一個一個設定（選人 → 選組別 → 點技能 → 排順位） ---- */
+  if(mode==='person'){
+    const fg = sessionStorage.getItem('lsp_skfg')||'all';
+    const list = sortEmps(D.employees,'group').filter(e=>fg==='all'||e.group===fg);
+    let sel = sessionStorage.getItem('lsp_sksel'); if(!list.some(e=>e.id===sel)) sel = list[0]&&list[0].id;
+    const e = sel && L.emp(sel), arr = e ? S.skills[e.id] : [];
+    const pg = (e && sessionStorage.getItem('lsp_skpg_'+e.id)) || (e && e.group);
+    const groups = GROUP_ORDER.filter(g=>GROUP_SKILLS[g]);
+    const cnt=g=>D.employees.filter(x=>x.group===g).length;
+    main.innerHTML = head + `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><b>看哪一組：</b>
+      ${[['all','全部',D.employees.length],...groups.filter(cnt).map(g=>[g,g,cnt(g)])].map(([k,t,n])=>`<button class="chip-btn ${fg===k?'on':''}" data-fg="${k}">${t} <small>${n}</small></button>`).join('')}</div>
+    <div class="sk2">
+      <div class="tbl-wrap sk2-list">${list.map(x=>{ const a=S.skills[x.id]; return `<button class="sk2-emp ${x.id===sel?'on':''} ${a.length?'':'empty'}" data-sel="${x.id}"><b>${esc(x.name)}</b> <small class="muted">${x.id}・${x.title}・${x.group}</small><div class="sk2-sum">${a.length?a.map((s,i)=>`<span>${'①②③④⑤⑥⑦⑧'[i]}${s}</span>`).join(''):'<span class="warn-t">還沒設定</span>'}</div></button>`; }).join('')||'<div class="muted" style="padding:16px">這一組沒有人</div>'}</div>
+      ${e?`<div class="sk2-panel">
+        <div class="sk2-ph"><div><b style="font-size:22px">${esc(e.name)}</b> <span class="muted">${e.id}　${e.title}・${e.group}</span></div>
+          <label class="sk2-ref">照誰設定：<select id="skRef"><option value="">選一位同事…</option>${groups.filter(cnt).map(g=>`<optgroup label="${g}">${sortEmps(D.employees,'group').filter(x=>x.group===g&&x.id!==e.id).map(x=>`<option value="${x.id}">${esc(x.name)}（${x.title}）${S.skills[x.id].length?'：'+S.skills[x.id].map((s,i)=>'①②③④⑤⑥⑦⑧'[i]+s).join(' '):'：還沒設定'}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
+        <div class="sk2-step"><span class="num">1</span> 選組別</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${groups.map(g=>`<button class="chip-btn ${pg===g?'on':''}" data-pg="${g}">${g}${g===e.group?' <small>(本組)</small>':''}</button>`).join('')}</div>
+        <div class="sk2-step"><span class="num">2</span> 點會做的技能（再點一次取消）</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${(GROUP_SKILLS[pg]||[]).map(s=>{ const k=arr.indexOf(s); return `<button class="sk2-skill ${k>=0?'on':''}" data-tog="${s}"><i style="background:${L.taskColor(s)}"></i>${s}${k>=0?` <b>${'①②③④⑤⑥⑦⑧'[k]}</b>`:''}</button>`; }).join('')}</div>
+        <div class="sk2-step"><span class="num">3</span> 排順位（① 最優先）</div>
+        ${arr.length?arr.map((s,i)=>`<div class="sk2-row"><span class="rank on ${i===0?'first':''}">${i+1}</span><i style="background:${L.taskColor(s)}"></i><b style="flex:1">${s}</b>
+          <button class="btn sm" data-up="${i}" ${i===0?'disabled':''} title="往上">▲</button><button class="btn sm" data-down="${i}" ${i===arr.length-1?'disabled':''} title="往下">▼</button><button class="btn sm" data-rm="${i}" style="color:var(--bad)" title="移除">✕</button></div>`).join(''):'<div class="muted" style="padding:10px 0">還沒有技能，請在上面第 2 步點選。</div>'}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap"><span class="muted">改了馬上存，不用另外按儲存。</span>${arr.length?'<button class="btn sm" id="skClr1" style="color:var(--bad)">清空這個人</button>':''}</div>
+      </div>`:''}
+    </div>
+    <ul class="note-below"><li>跟其他組支援的技能（例如值班的人也會生鮮），在第 1 步切到那一組再點。</li><li>表格設定、列表設定，改的是同一份資料，兩邊會一樣。</li></ul>`;
+    bindHead();
+    main.querySelectorAll('[data-fg]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skfg',b.dataset.fg); L.redraw(); });
+    main.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_sksel',b.dataset.sel); L.redraw(); });
+    if(!e) return;
+    const edit=fn=>{ const before=order(arr); fn(); changed(e,before); };
+    main.querySelector('#skRef').onchange=ev=>{ const r=L.emp(ev.target.value); if(!r) return;
+      sessionStorage.setItem('lsp_skpg_'+e.id, r.group);
+      edit(()=>{ arr.splice(0, arr.length, ...S.skills[r.id]); });
+      L.toast(`已照 ${r.name} 設定`, `組別：${r.group}　技能：${order(S.skills[r.id])}`); };
+    main.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skpg_'+e.id,b.dataset.pg); L.redraw(); });
+    main.querySelectorAll('[data-tog]').forEach(b=>b.onclick=()=>edit(()=>{ const s=b.dataset.tog, k=arr.indexOf(s); if(k<0) arr.push(s); else arr.splice(k,1); }));
+    main.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.up; [arr[i-1],arr[i]]=[arr[i],arr[i-1]]; }));
+    main.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.down; [arr[i+1],arr[i]]=[arr[i],arr[i+1]]; }));
+    main.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>edit(()=>arr.splice(+b.dataset.rm,1)));
+    const c1=main.querySelector('#skClr1'); if(c1) c1.onclick=()=>edit(()=>arr.splice(0));
+    return;
+  }
+
+  /* ---- 模式一：表格看全部（排序＋分組） ---- */
   const by = sessionStorage.getItem('lsp_skgrp')||'group';     // group | title | none
   const sk = JSON.parse(sessionStorage.getItem('lsp_sksort')||'null'); // {col,dir}
   let list = sortEmps(D.employees, by==='title'?'title':'group');
@@ -367,19 +433,18 @@ route('/skills',(main)=>{
     const gh = (by!=='none' && g!==lastG) ? `<tr class="grp-row"><td class="sticky">${esc(g)}　<small class="muted">${list.filter(x=>(by==='title'?x.title:x.group)===g).length} 人</small></td><td colspan="${2+L.SKILLS.length}"></td></tr>` : ''; lastG=g;
     return gh+`<tr><td class="sticky"><b>${esc(e.name)}</b><br><small class="muted">${e.id}</small></td><td>${e.title}</td><td>${e.group}</td>${L.SKILLS.map(s=>{ const k=S.skills[e.id].indexOf(s); return `<td><button class="rank ${k<0?'':'on'} ${k===0?'first':''}" data-id="${e.id}" data-s="${s}" title="${k<0?'點一下加入':'點一下改順位或取消'}">${k<0?'':k+1}</button></td>`; }).join('')}</tr>`;
   }).join('');
-  main.innerHTML=`<div class="top"><h2>員工技能</h2><span class="muted">點格子設定每個人會做的工作和順位：① 最優先。日作業表先分 ① 的工作，① 人夠了才分 ②</span></div>
-  <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><b>分組看：</b>
+  main.innerHTML=head+`<div style="display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><b>分組看：</b>
     <div class="seg-toggle">${[['group','依組別'],['title','依職稱'],['none','不分組']].map(([k,t])=>`<button data-by="${k}" class="${by===k?'on':''}">${t}</button>`).join('')}</div>
     <span class="muted">點表頭可以排序（再點一次反過來）</span>${sk?'<button class="btn sm" id="unsort">取消排序</button>':''}</div>
   <div class="tbl-wrap"><table class="g"><thead><tr>${cols.map(([c,t],i)=>`<th class="sort ${i===0?'sticky':''}" data-col="${c}">${t}${arrow(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>
   <ul class="note-below"><li>技能只有 8 種：管理、值班、收銀、乾貨人力、生鮮擔當、生鮮人力、熟食擔當、熟食人力。顏色由總部「🎨 工作項目與顏色」設定。</li><li>點空格＝加在最後一個順位；點有數字的格子可以改順位或取消，其他順位自動補位。</li><li>點技能的表頭，會把這個技能順位高的人排前面。依組別、依職稱分組時，會在每一組裡面排序。</li></ul>`;
+  bindHead();
   main.querySelectorAll('[data-by]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_skgrp',b.dataset.by); L.redraw(); });
   main.querySelectorAll('th[data-col]').forEach(th=>th.onclick=()=>{ const c=th.dataset.col; const dir = sk&&sk.col===c ? -sk.dir : 1; sessionStorage.setItem('lsp_sksort',JSON.stringify({col:c,dir})); L.redraw(); });
   const us=main.querySelector('#unsort'); if(us) us.onclick=()=>{ sessionStorage.removeItem('lsp_sksort'); L.redraw(); };
-  const order=a=>a.map((x,i)=>`${i+1}.${x}`).join(' ')||'無';
   main.querySelectorAll('.rank').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id, s=b.dataset.s, arr=S.skills[id], e=L.emp(id), before=order(arr), k=arr.indexOf(s);
-    const done=()=>{ Object.values(S.months).forEach(M=>M.dayPlans={}); L.log('技能',`${e.name} 技能順位`,before,order(S.skills[id])); L.redraw(); };
+    const done=()=>changed(e,before);
     if(k<0){ arr.push(s); done(); return; }
     modal(`<h3>${esc(e.name)}　${s}</h3><div class="muted">現在是第 ${k+1} 順位。目前順序：${esc(order(arr))}</div>
       <div class="b" style="margin-top:12px">改成第幾順位：</div>

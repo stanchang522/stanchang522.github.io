@@ -94,7 +94,8 @@ L.route('/day',(main, r)=>{
   sessionStorage.setItem('lsp_day_'+MM.key,d);
   const sent=MS.status==='sent' || MM.kind==='past';
   const p=plan(d);
-  const ids=Object.keys(p).sort((a,b)=>p[a].start-p[b].start || p[a].len-p[b].len);
+  const allIds=Object.keys(p);
+  const ff=L.empFilterFn(), ids=allIds.filter(id=>ff(L.emp(id))).sort((a,b)=>p[a].start-p[b].start || p[a].len-p[b].len);
   const W=(T1-T0)*PX;
   const hours=[]; for(let m=T0;m<T1;m+=60) hours.push(m);
   const dw=L.dow(d);
@@ -105,10 +106,11 @@ L.route('/day',(main, r)=>{
     <button class="btn" id="prev" ${d<=1?'disabled':''}>◀ 前一天</button>
     <div style="font-size:26px;font-weight:700;min-width:190px;text-align:center">${M}/${d}（${L.DOW[dw]}）</div>
     <button class="btn" id="next" ${d>=DAYS?'disabled':''}>後一天 ▶</button>
-    <span class="muted">${ids.length} 人上班</span>
+    <span class="muted">${ids.length===allIds.length?`${ids.length} 人上班`:`顯示 ${ids.length} 人／全店 ${allIds.length} 人上班`}</span>
     <div class="spacer"></div>
     <select class="sel-big" id="pickDay" style="font-size:18px">${[...Array(DAYS)].map((_,i)=>`<option value="${i+1}" ${i+1===d?'selected':''}>${M}/${i+1}（${L.DOW[L.dow(i+1)]}）</option>`).join('')}</select>
   </div>
+  ${L.empFilterBar()}
   ${sent?`<div class="banner blue">${MM.kind==='past'?'這是過去的月份，只能看。':'月班表已送出，日作業表是唯讀。要改請到月班表按「✎ 編輯」。'}</div>`:`
   <div class="card" id="palette" style="padding:14px 16px;position:sticky;top:0;z-index:20">
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
@@ -137,11 +139,12 @@ L.route('/day',(main, r)=>{
           <div style="position:absolute;left:${sx}px;width:${sw}px;top:0;bottom:0;background:#fff;background-image:repeating-linear-gradient(90deg,transparent 0,transparent ${60*PX-1}px,#e3e6ec ${60*PX-1}px,#e3e6ec ${60*PX}px);background-position:${-((row.start-T0)%60)*PX}px 0"></div>
           ${blocks}
         </div></div>`; }).join('')}
-    ${coverage(p,ids,d,W)}
+    ${ids.length?'':'<div class="muted" style="padding:16px">這一天篩選的人沒有上班。</div>'}
+    ${coverage(p,allIds,d,W)}
    </div>
   </div>
-  <ul class="note-below"><li>下面「人力」列是每個小時排到幾個人／最少要幾人（門市基本資料的「依時段」最少人力），不夠會變紅。</li><li>工作項目和顏色由總部設定（總部 →「🎨 工作項目與顏色」）。</li></ul>`;
-  L.bindTabs(main); L.bindMonthBar(main,'#/day');
+  <ul class="note-below"><li>「看哪些人」只影響上面顯示哪些人；下面「人力」列一律算全店，才對得上最少人力。</li><li>下面「人力」列是每個小時排到幾個人／最少要幾人（門市基本資料的「依時段」最少人力），不夠會變紅。</li><li>工作項目和顏色由總部設定（總部 →「🎨 工作項目與顏色」）。</li></ul>`;
+  L.bindTabs(main); L.bindMonthBar(main,'#/day'); L.bindEmpFilter(main);
   main.querySelector('#prev').onclick=()=>location.hash='#/day/'+(d-1);
   main.querySelector('#next').onclick=()=>location.hash='#/day/'+(d+1);
   main.querySelector('#pickDay').onchange=ev=>location.hash='#/day/'+ev.target.value;
@@ -163,7 +166,7 @@ function coverage(p, ids, d, W){
       return `<div style="position:absolute;left:${(m-T0)*PX}px;width:${60*PX}px;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:15px;${low?'background:#ffe3e3;color:#bd0a0a;font-weight:700':''}">${cnt[i]||''}${req?`<small class="muted">/${req}</small>`:''}</div>`;}).join('');
     return `<div style="display:flex;border-bottom:1px solid #e3e6ec;background:#f7f8fb"><div style="width:190px;flex:none;padding:4px 10px;position:sticky;left:0;background:#f7f8fb;z-index:2;border-right:1px solid var(--line);font-size:15px"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${L.taskColor(t)};border:1px solid #999;vertical-align:-2px"></i> ${t}</div><div style="position:relative;width:${W}px;height:34px">${cells}</div></div>`;
   }).join('');
-  return `<div style="padding:8px 10px;font-weight:700;background:#f0f3f8;border-top:2px solid var(--line);position:sticky;left:0;width:190px">人力（每小時）</div>${rows}`;
+  return `<div style="padding:8px 10px;font-weight:700;background:#f0f3f8;border-top:2px solid var(--line);position:sticky;left:0;width:190px">人力（每小時・全店）</div>${rows}`;
 }
 
 /* ---------- 拖拉 ---------- */

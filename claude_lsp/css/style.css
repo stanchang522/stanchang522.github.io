@@ -172,3 +172,31 @@ table.g tfoot td{background:#f7f8fb;font-weight:700}
 th.wkh{background:#ffe680 !important;font-size:14px;border-left:2px solid #888;border-right:2px solid #888}
 table.g td.wkc{background:#fff3b0;font-weight:700;font-size:17px;border-left:2px solid #888;border-right:2px solid #888;min-width:50px}
 table.g td.wkc.over{background:#ffd6d6;color:var(--bad)}
+
+/* 員工技能：一個一個設定 */
+.chip-btn{padding:9px 16px;border:1.5px solid var(--line);border-radius:22px;background:#fff;font-size:17px}
+.chip-btn.on{background:var(--pri);border-color:var(--pri);color:#fff;font-weight:700}
+.chip-btn small{opacity:.75}
+.sk2{display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:16px;align-items:start}
+.sk2-list{max-height:640px;overflow-y:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
+.sk2-emp{display:block;width:100%;text-align:left;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:#fff;font-size:18px}
+.sk2-emp.on{background:var(--pri-xl);box-shadow:inset 5px 0 0 var(--pri)}
+.sk2-sum{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;font-size:15px;color:#333}
+.sk2-emp.empty .warn-t{color:var(--bad);font-weight:700}
+.sk2-panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px 20px;position:sticky;top:12px}
+.sk2-ph{padding-bottom:10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.sk2-ref{font-size:17px;font-weight:700;white-space:nowrap}
+.sk2-ref select{font-size:17px;padding:8px 10px;border:1.5px solid var(--ink);border-radius:10px;background:#fff;max-width:300px;margin-left:4px}
+.sk2-step{margin:16px 0 8px;font-weight:700;font-size:18px}
+.sk2-step .num{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:15px;margin-right:6px}
+.sk2-skill{padding:11px 18px;border:1.5px solid var(--line);border-radius:12px;background:#fff;font-size:18px}
+.sk2-skill.on{border-color:var(--pri);background:var(--pri-l);font-weight:700}
+.sk2-skill i,.sk2-row i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #999;margin-right:6px;vertical-align:-2px}
+.sk2-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;font-size:18px}
+.sk2-row .rank{display:inline-grid;place-items:center;cursor:default}
+@media (max-width:900px){.sk2{grid-template-columns:1fr}.sk2-panel{position:static}}
+
+/* 員工篩選列（月班表、日作業表） */
+.empf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;font-size:17px}
+.empf b{margin-right:4px}
+.empf-sep{width:1.5px;height:28px;background:var(--line);margin:0 6px}
