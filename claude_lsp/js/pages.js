@@ -23,7 +23,9 @@ function schedHead(cur, o){ o=o||{};
   return `<div class="sh"><div class="sh-r1">${L.modeSeg()}<div class="spacer"></div><div class="seg big">${[['m','#/month','📅 月班表'],['d','#/day','🕘 日作業表']].map(([k,h,t])=>`<button data-h="${h}" class="${cur===k?'on':''}">${t}</button>`).join('')}</div></div>
   <div class="sh-r2"><div class="sh-left"><div class="sh-line">${L.monthChips()}${o.line1||''}</div>${o.line2||''}</div>
     <div class="sh-right">${o.right?`<div class="sh-btns">${o.right}</div>`:''}${o.kpi?`<div class="sh-kpi">${o.kpi}</div>`:''}</div></div>${o.note?`<div class="sh-note">${o.note}</div>`:''}</div>`; }
-L.schedTabs=schedTabs; L.schedHead=schedHead; L.bindTabs=bindTabs; L.statusPill=statusPill; L.SPECIAL=SPECIAL;
+const STAT_BY_GROUP={'管理':['管理'],'值班':['值班'],'乾貨':['收銀','乾貨人力'],'生鮮':['生鮮擔當','生鮮人力'],'熟食':['熟食擔當','熟食人力']};
+L.STAT_BY_GROUP=STAT_BY_GROUP;
+L.schedTabs=schedTabs; L.schedHead=schedHead; L.sortEmps=(l,b)=>sortEmps(l,b); L.bindTabs=bindTabs; L.statusPill=statusPill; L.SPECIAL=SPECIAL;
 function cellText(c){ return SPECIAL[c]||c||''; }
 L.cellText=cellText;
 
@@ -140,7 +142,7 @@ route('/month', (main)=>{
   const sat=d=>L.dow(d,mm)===6?'border-right:2px solid #888;':'';
   const wkEnd=d=>L.dow(d,mm)===6||d===mm.days;
   const wkStart=d=>{ let x=d; while(x>1 && L.dow(x-1,mm)!==6) x--; return x; };
-  const head = days.map(d=>`<th class="${L.dow(d,mm)%6===0?'wk-sun':''}" style="${isToday(d)?'background:#fff6b6':''}">${d}<br><small>${isToday(d)?'今天':L.DOW[L.dow(d,mm)]}</small></th>`+(wkEnd(d)?`<th class="wkh">週<br>工時</th>`:'')).join('');
+  const head = days.map(d=>`<th class="dlink ${L.dow(d,mm)%6===0?'wk-sun':''}" data-dd="${d}" title="點一下看 ${mm.m}/${d} 的日作業表" style="${isToday(d)?'background:#fff6b6':''}">${d}<br><small>${isToday(d)?'今天':L.DOW[L.dow(d,mm)]}</small></th>`+(wkEnd(d)?`<th class="wkh">週<br>工時</th>`:'')).join('');
   const ef=L.empF(), EMP=D.employees.filter(L.empFilterFn(ef)), fl=ef!=='all';
   const rows = sortEmps(EMP,'group').map(e=>{
     const lim=e.ft?48:40;
@@ -158,6 +160,15 @@ route('/month', (main)=>{
   function wkCell(e,d,lim){ const h=M.sched[e.id].slice(wkStart(d)-1,d).reduce((a,c)=>a+L.netH(c),0); const full=d-wkStart(d)+1===7;
     return `<td class="wkc ${h>lim?'over':''}" title="${mm.m}/${wkStart(d)}～${mm.m}/${d}${full?'':'（不滿一週）'}，上限 ${lim} 小時">${h}</td>`; }
   const cnt = days.map(d=>EMP.filter(e=>L.isWork(M.sched[e.id][d-1])).length);
+  // 下方統計：每個人用技能 ①（還沒設定就用歷史資料的技能）
+  // 篩選某一組時，下面技能統計只列那一組的技能；跟上班人數一樣只算篩選到的人（技能加起來＝上班人數）
+  let statSkills = ef.startsWith('g:') ? (STAT_BY_GROUP[ef.slice(2)]||L.SKILLS).slice() : L.SKILLS.slice();
+  EMP.forEach(e=>{ const p=(S.skills[e.id]||[])[0]; if(p && !statSkills.includes(p)) statSkills.push(p); });   // 組裡有人 ① 是別組技能，也列出來，數字才加得起來
+  statSkills = L.SKILLS.filter(x=>statSkills.includes(x));
+  const primSkill=e=>(S.skills[e.id]&&S.skills[e.id][0])||'';   // 只看店長設定的技能 ①
+  const noSkill=EMP.some(e=>!primSkill(e));
+  // fn(d) 回傳那天符合的人；滑鼠移到數字上會浮出名字
+  const statRow=(label,fn,cls)=>`<tr class="${cls}"><td class="sticky">${label}</td><td></td>${days.map(d=>{ const ps=sortEmps(fn(d),'group'), v=ps.length; return `<td>${v?`<span class="tip" data-tip="${mm.m}/${d}：${ps.map(e=>e.name).join('、')}">${v}</span>`:'<span class="muted">0</span>'}</td>`+(wkEnd(d)?'<td class="wkc"></td>':''); }).join('')}</tr>`;
   const wkTot = d=>EMP.reduce((a,e)=>a+M.sched[e.id].slice(wkStart(d)-1,d).reduce((x,c)=>x+L.netH(c),0),0);
   main.innerHTML=schedHead('m',{
     line1:`${statusPill(M,mm)}<span class="lbl" style="margin-left:10px">顯示</span><div class="seg">${[['code','名稱'],['time','時間']].map(([k,t])=>`<button data-mode="${k}" class="${mode===k?'on':''}">${t}</button>`).join('')}</div>`,
@@ -170,15 +181,22 @@ route('/month', (main)=>{
   main.insertAdjacentHTML('beforeend',`
   <div class="tbl-wrap ${ro?'ro':''}"><table class="g"><thead><tr><th class="sticky">姓名</th><th>總工時</th>${head}</tr></thead>
     <tbody>${rows}</tbody>
-    <tfoot><tr><td class="sticky">上班人數${fl?'<br><small class="muted">（只算篩選的人）</small>':''}</td><td></td>${cnt.map((c,i)=>`<td>${c}</td>`+(wkEnd(i+1)?`<td class="wkc">${n(wkTot(i+1))}</td>`:'')).join('')}</tr></tfoot></table></div>
+    <tfoot><tr><td class="sticky">上班人數${fl?'<br><small class="muted">（只算篩選的人）</small>':''}</td><td></td>${cnt.map((c,i)=>`<td><span class="tip" data-tip="${mm.m}/${i+1}：${sortEmps(EMP.filter(e=>L.isWork(M.sched[e.id][i])),'group').map(e=>e.name).join('、')}">${c}</span></td>`+(wkEnd(i+1)?`<td class="wkc">${n(wkTot(i+1))}</td>`:'')).join('')}</tr>
+      ${statRow('休假人數', d=>EMP.filter(e=>['休','例'].includes(M.sched[e.id][d-1])), 'st-off')}
+      <tr class="st-sep"><td class="sticky">技能（看 ① 最優先${fl?'，只算篩選的人':''}）</td><td></td>${days.map(d=>'<td></td>'+(wkEnd(d)?'<td class="wkc"></td>':'')).join('')}</tr>
+      ${statSkills.map(sk=>statRow(`<i class="st-dot" style="background:${L.taskColor(sk)}"></i>${sk}`, d=>EMP.filter(e=>L.isWork(M.sched[e.id][d-1]) && primSkill(e)===sk), 'st-sk')).join('')}
+      ${noSkill?statRow('<span class="bad">還沒設定技能</span>', d=>EMP.filter(e=>L.isWork(M.sched[e.id][d-1]) && !primSkill(e)), 'st-sk'):''}
+    </tfoot></table></div>
   <div class="legend" style="margin-top:10px"><span><i style="background:#ffe9e9"></i>例假</span><span><i style="background:#f3f3f3"></i>休假</span><span><i style="background:#dbe9c4"></i>支援／受訓／育嬰</span><span><i style="background:#fafafa"></i>不排（兼職）</span><span><i style="outline:3px solid var(--bad)"></i>勞基法問題（不能送出）</span><span><i style="outline:3px dashed var(--warn)"></i>提醒</span><span><i style="box-shadow:inset 0 -5px 0 var(--warn)"></i>手動改過</span><span><i style="background:#fff3b0"></i>週工時（正職超過 48、兼職超過 40 變紅）</span><span><i style="outline:3px dotted #8a3ffc;outline-offset:-3px"></i>排到不可排班時段</span><span><b style="color:var(--pri)">調</b>出勤檢核調整過的班</span><span>(8+1)＝工時 8 小時＋休息 1 小時</span></div>
   <ul class="note-below">
+    <li>表格最下面是每天的統計：上班人數、休假人數（休＋例），和每個技能當天上班幾人（看每個人的技能 ①；技能項目跟「門市基本資料 → 最少人力」一樣）。上面選某一組時，只列那一組的技能、只算那一組的人；每天各技能加起來＝上班人數。還沒設定技能的人會另外列「還沒設定技能」。</li>
     <li>上面「看哪些人」可以只看某一組、正職或兼職；上方的已排班工時、勞基法檢核還是算全店。</li>
     <li>點格子可以改班別、休假。每改一格就做第一層勞基法檢查（六休一、每週例假、兩班間隔 11 小時、週工時），有問題只跳提醒、格子框紅，<b>不會擋住</b>。</li>
     <li>「儲存草稿」可以存很多次；有還沒存的修改時「送出」是灰的。送出時再做一次完整檢查，六休一、兩班間隔有問題就不能送出；每週例假、週工時超過先只提醒（原始班表用雙週變形、兼職可超排，規則待確認）。</li>
     <li>已送出後按「✎ 編輯」→ 回到草稿，總部報表回到「排班中」。</li>
   </ul>`);
   bindTabs(main); L.bindEmpFilter(main);
+  main.querySelectorAll('th.dlink').forEach(th=>th.onclick=()=>location.hash='#/day/'+th.dataset.dd);
   main.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{ sessionStorage.setItem('lsp_mode',b.dataset.mode); L.redraw(); });
   main.querySelector('#law').onclick=()=>showIssues(issues,false,mm);
   if(past) return;
@@ -408,7 +426,7 @@ route('/skills',(main)=>{
     const list = sortEmps(D.employees,'group').filter(e=>fg==='all'||e.group===fg);
     let sel = sessionStorage.getItem('lsp_sksel'); if(!list.some(e=>e.id===sel)) sel = list[0]&&list[0].id;
     const e = sel && L.emp(sel), arr = e ? S.skills[e.id] : [];
-    const pg = (e && sessionStorage.getItem('lsp_skpg_'+e.id)) || (e && e.group);
+    const pg = (e && sessionStorage.getItem('lsp_skpg_'+e.id)) || (e && arr.length ? e.group : '');   // 還沒點組別、也還沒技能 → 只先出現第 1 步
     const groups = GROUP_ORDER.filter(g=>GROUP_SKILLS[g]);
     const cnt=g=>D.employees.filter(x=>x.group===g).length;
     main.innerHTML = head + `<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px"><b>看哪一組：</b>
@@ -418,13 +436,14 @@ route('/skills',(main)=>{
       ${e?`<div class="sk2-panel">
         <div class="sk2-ph"><div><b style="font-size:22px">${esc(e.name)}</b> <span class="muted">${e.id}　${e.title}・${e.group||'未選組別'}</span></div>
           <label class="sk2-ref">照誰設定：<select id="skRef"><option value="">選一位同事…</option>${groups.filter(cnt).map(g=>`<optgroup label="${g}">${sortEmps(D.employees,'group').filter(x=>x.group===g&&x.id!==e.id).map(x=>`<option value="${x.id}">${esc(x.name)}（${x.title}）${S.skills[x.id].length?'：'+S.skills[x.id].map((s,i)=>'①②③④⑤⑥⑦⑧'[i]+s).join(' '):'：還沒設定'}</option>`).join('')}</optgroup>`).join('')}</select></label></div>
-        <div class="sk2-step"><span class="num">1</span> 選組別${e.group?'':'<span class="bad" style="font-size:16px">　← 先選這個人是哪一組</span>'}</div>
+        <div class="sk2-sec"><div class="sk2-step"><span class="num">1</span> 選組別${pg?'':'<span class="bad" style="font-size:16px">　← 先點一個組別</span>'}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">${groups.map(g=>`<button class="chip-btn ${pg===g?'on':''}" data-pg="${g}">${g}${g===e.group?' <small>(本組)</small>':''}</button>`).join('')}</div>
-        <div class="sk2-step"><span class="num">2</span> 點會做的技能（再點一次取消）</div>${pg?'':'<div class="muted">選好組別後，這裡會出現那一組的技能。</div>'}
-        <div style="display:flex;gap:10px;flex-wrap:wrap">${(GROUP_SKILLS[pg]||[]).map(s=>{ const k=arr.indexOf(s); return `<button class="sk2-skill ${k>=0?'on':''}" data-tog="${s}"><i style="background:${L.taskColor(s)}"></i>${s}${k>=0?` <b>${'①②③④⑤⑥⑦⑧'[k]}</b>`:''}</button>`; }).join('')}</div>
-        <div class="sk2-step"><span class="num">3</span> 排順位（① 最優先）</div>
+        </div>
+        ${pg?`<div class="sk2-sec"><div class="sk2-step"><span class="num">2</span> 點會做的技能（再點一次取消）</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">${(GROUP_SKILLS[pg]||[]).map(s=>{ const k=arr.indexOf(s); return `<button class="sk2-skill ${k>=0?'on':''}" data-tog="${s}"><i style="background:${L.taskColor(s)}"></i>${s}${k>=0?` <b>${'①②③④⑤⑥⑦⑧'[k]}</b>`:''}</button>`; }).join('')}</div></div>
+        <div class="sk2-sec"><div class="sk2-step"><span class="num">3</span> 排順位（① 最優先）</div>
         ${arr.length?arr.map((s,i)=>`<div class="sk2-row"><span class="rank on ${i===0?'first':''}">${i+1}</span><i style="background:${L.taskColor(s)}"></i><b style="flex:1">${s}</b>
-          <button class="btn sm" data-up="${i}" ${i===0?'disabled':''} title="往上">▲</button><button class="btn sm" data-down="${i}" ${i===arr.length-1?'disabled':''} title="往下">▼</button><button class="btn sm" data-rm="${i}" style="color:var(--bad)" title="移除">✕</button></div>`).join(''):'<div class="muted" style="padding:10px 0">還沒有技能，請在上面第 2 步點選。</div>'}
+          <button class="btn sm" data-up="${i}" ${i===0?'disabled':''} title="往上">▲</button><button class="btn sm" data-down="${i}" ${i===arr.length-1?'disabled':''} title="往下">▼</button><button class="btn sm" data-rm="${i}" style="color:var(--bad)" title="移除">✕</button></div>`).join(''):'<div class="muted" style="padding:10px 0">還沒有技能，請在上面第 2 步點選。</div>'}</div>`:'<div class="sk2-sec muted" style="font-size:17px">點好組別後，會出現 ② 選技能、③ 排順位。</div>'}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;gap:10px;flex-wrap:wrap"><span class="muted">改了馬上存，不用另外按儲存。</span>${arr.length?'<button class="btn sm" id="skClr1" style="color:var(--bad)">清空這個人</button>':''}</div>
       </div>`:''}
     </div>
@@ -438,7 +457,7 @@ route('/skills',(main)=>{
       sessionStorage.setItem('lsp_skpg_'+e.id, r.group); if(e.group!==r.group){ S.empGroup=S.empGroup||{}; S.empGroup[e.id]=r.group; }
       edit(()=>{ arr.splice(0, arr.length, ...S.skills[r.id]); });
       L.toast(`已照 ${r.name} 設定`, `組別：${r.group}　技能：${order(S.skills[r.id])}`); };
-    main.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ if(!e.group){ setGroup(e,b.dataset.pg); return; } sessionStorage.setItem('lsp_skpg_'+e.id,b.dataset.pg); L.redraw(); });
+    main.querySelectorAll('[data-pg]').forEach(b=>b.onclick=()=>{ if(!e.group) setGroup(e,b.dataset.pg); sessionStorage.setItem('lsp_skpg_'+e.id,b.dataset.pg); L.redraw(); });
     main.querySelectorAll('[data-tog]').forEach(b=>b.onclick=()=>edit(()=>{ const s=b.dataset.tog, k=arr.indexOf(s); if(k<0) arr.push(s); else arr.splice(k,1); }));
     main.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.up; [arr[i-1],arr[i]]=[arr[i],arr[i-1]]; }));
     main.querySelectorAll('[data-down]').forEach(b=>b.onclick=()=>edit(()=>{ const i=+b.dataset.down; [arr[i+1],arr[i]]=[arr[i],arr[i+1]]; }));

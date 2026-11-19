@@ -9,9 +9,9 @@ const snap=m=>Math.round(m/SNAP)*SNAP;
 // 依技能順位分工作：① 的工作在他上班時段還缺人就做 ①，① 已經夠了才看 ②、③…
 function slotsOf(start,len){ const out=[]; for(let i=0;i<L.NSLOT;i++){ const t=L.SLOT0+i*30; if(t>=start && t<start+len) out.push(i); } return out; }
 function mainTask(e, start, len, cov){
-  let sk=(L.S.skills[e.id]||[]).filter(t=>L.S.tasks.some(x=>x.name===t));
-  if(!sk.length) sk=(e.skills||[]).filter(t=>L.S.tasks.some(x=>x.name===t));   // 還沒設定技能：先用歷史資料的技能
-  if(!sk.length) return '乾貨人力';
+  const sk=(L.S.skills[e.id]||[]).filter(t=>L.S.tasks.some(x=>x.name===t));
+  if(!sk.length){ // 還沒設定技能：先用歷史資料的技能顯示，但不算進「人夠不夠」，免得擠掉有設定技能的人
+    const h=(e.skills||[]).filter(t=>L.S.tasks.some(x=>x.name===t)); return h[0]||'乾貨人力'; }
   const sl=slotsOf(start,len);
   const t = sk.find(t=>sl.some(i=>(cov[t]?.[i]||0) < (L.S.req[t]?.[i]||0))) || sk[0];
   if(cov){ cov[t]=cov[t]||Array(L.NSLOT).fill(0); sl.forEach(i=>cov[t][i]++); }
@@ -27,6 +27,7 @@ function defaultRow(e, code, cov){
   return {start:a, len, code, segs};
 }
 function plan(d){
+  if(MS.planV!==2){ MS.dayPlans={}; MS.planV=2; }   // 分工規則改過：舊的自動分工重算
   let p=MS.dayPlans[d];
   const working=D.employees.filter(e=>L.isWork(MS.sched[e.id][d-1]));
   if(!p){
@@ -96,7 +97,7 @@ L.route('/day',(main, r)=>{
   const sent=MS.status==='sent' || MM.kind==='past';
   const p=plan(d);
   const allIds=Object.keys(p);
-  const ff=L.empFilterFn(), ids=allIds.filter(id=>ff(L.emp(id))).sort((a,b)=>p[a].start-p[b].start || p[a].len-p[b].len);
+  const ff=L.empFilterFn(), ids=L.sortEmps(allIds.map(id=>L.emp(id)).filter(ff),'group').map(e=>e.id);   // 跟月班表同樣的順序
   const W=(T1-T0)*PX;
   const hours=[]; for(let m=T0;m<T1;m+=60) hours.push(m);
   const dw=L.dow(d);
@@ -128,16 +129,16 @@ L.route('/day',(main, r)=>{
         return `<div class="blk" data-id="${id}" data-i="${i}" title="${esc(g.t)} ${L.fmt(acc-g.d)}～${L.fmt(acc)}" style="position:absolute;left:${left}px;top:6px;width:${w}px;height:44px;background:${known?known.color:'#ddd'};border:1.5px solid rgba(0,0,0,.35);border-radius:8px;overflow:hidden;white-space:nowrap;font-size:${w<50?12:15}px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:${sent?'default':'grab'};user-select:none;touch-action:none">${esc(known?g.t:g.t+'(已刪除)')}${sent?'':'<div class="rz" style="position:absolute;right:0;top:0;bottom:0;width:10px;cursor:ew-resize;background:rgba(0,0,0,.12)"></div>'}</div>`;}).join('');
       const sx=(row.start-T0)*PX, sw=row.len*PX;
       return `<div style="display:flex;border-bottom:1px solid #e3e6ec">
-        <div style="width:190px;flex:none;padding:6px 10px;position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)"><b>${esc(e.name)}</b> <small class="muted">${e.group}</small><br><small><b>${row.code}</b> ${s.start}～${s.end} <span class="muted">${L.hrsTag(row.code)}</span></small></div>
+        <div style="width:190px;flex:none;padding:6px 10px;position:sticky;left:0;background:#fff;z-index:2;border-right:1px solid var(--line)"><b>${esc(e.name)}</b> <small class="muted">${e.group}</small><br><small><b>${row.code}</b> ${s.start}～${s.end} <span class="muted">${L.hrsTag(row.code)}</span></small>${prioTag(id,row)}</div>
         <div class="trow" data-id="${id}" style="position:relative;width:${W}px;height:56px;background:#eceef2">
           <div style="position:absolute;left:${sx}px;width:${sw}px;top:0;bottom:0;background:#fff;background-image:repeating-linear-gradient(90deg,transparent 0,transparent ${60*PX-1}px,#e3e6ec ${60*PX-1}px,#e3e6ec ${60*PX}px);background-position:${-((row.start-T0)%60)*PX}px 0"></div>
           ${blocks}
         </div></div>`; }).join('')}
     ${ids.length?'':'<div class="muted" style="padding:16px">這一天篩選的人沒有上班。</div>'}
-    ${coverage(p,allIds,d,W)}
+    ${coverage(p,ids,d,W)}
    </div>
   </div>
-  <ul class="note-below"><li>「看哪些人」只影響上面顯示哪些人；下面「人力」列一律算全店，才對得上最少人力。</li><li>下面「人力」列是每個小時排到幾個人／最少要幾人（門市基本資料的「依時段」最少人力），不夠會變紅。</li><li>工作項目和顏色由總部設定（總部 →「🎨 工作項目與顏色」）。</li></ul>`;
+  <ul class="note-below"><li>「看哪些人」選組別時，下面「人力」只列這組的工作、只算這組的人（跟月班表統計一樣）；選正職／兼職時只算數字，不跟最少人力比紅字。</li><li>下面「人力」列是每個小時排到幾個人／最少要幾人（門市基本資料的「依時段」最少人力），不夠會變紅。</li><li>工作項目和顏色由總部設定（總部 →「🎨 工作項目與顏色」）。</li></ul>`;
   L.bindTabs(main); L.bindMonthBar(main,'#/day'); L.bindEmpFilter(main);
   main.querySelector('#prev').onclick=()=>location.hash='#/day/'+(d-1);
   main.querySelector('#next').onclick=()=>location.hash='#/day/'+(d+1);
@@ -147,20 +148,29 @@ L.route('/day',(main, r)=>{
   bindDrag(main, d, p);
 });
 
+/* 這個人今天做的是他的第幾順位技能（不是 ① 就標出來，說明為什麼） */
+function prioTag(id,row){ const sk=L.S.skills[id]||[]; if(!sk.length) return '<br><small class="muted">還沒設定技能</small>';
+  const g=row.segs.find(x=>x.t&&x.t!=='休息'); if(!g) return ''; const k=sk.indexOf(g.t);
+  if(k===0) return ''; if(k<0) return `<br><small class="bad">不是他的技能</small>`;
+  return `<br><small style="color:#b54708">① ${sk[0]} 人已夠 → 做 ${'①②③④⑤⑥⑦⑧'[k]}</small>`; }
 function needAt(task, minute){ const r=L.S.req[task]; if(!r) return null; const i=Math.floor((minute-L.SLOT0)/30); return (i>=0&&i<L.NSLOT)?r[i]:0; }
 function coverage(p, ids, d, W){
-  const tasks=L.S.tasks.filter(t=>t.name!=='休息').map(t=>t.name);
+  const ef=L.empF(), grp=ef.startsWith('g:'), cmp=ef==='all'||grp;   // 正職／兼職只看一部分人，不跟最少人力比
+  let tasks=L.S.tasks.filter(t=>t.name!=='休息').map(t=>t.name);
+  if(grp){ const keep=(L.STAT_BY_GROUP[ef.slice(2)]||tasks).slice();
+    ids.forEach(id=>(p[id].segs||[]).forEach(g=>{ if(g.t&&g.t!=='休息'&&!keep.includes(g.t)) keep.push(g.t); }));   // 組裡有人做別組工作，也列出來
+    tasks=tasks.filter(t=>keep.includes(t)); }
   const hrs=[]; for(let m=T0;m<T1;m+=60) hrs.push(m);
   const rows=tasks.map(t=>{
     const cnt=hrs.map(m=>ids.filter(id=>taskAt(p[id],m+30)===t).length);
-    if(!cnt.some(Boolean) && !(L.S.req[t]||[]).some(Boolean)) return '';
+    if(!cnt.some(Boolean) && !(cmp&&(L.S.req[t]||[]).some(Boolean))) return '';
     const cells=hrs.map((m,i)=>{
-      const req=needAt(t, m+30), inBiz=true;
+      const req=cmp?needAt(t, m+30):0;
       const low = !!req && cnt[i]<req;
       return `<div style="position:absolute;left:${(m-T0)*PX}px;width:${60*PX}px;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:15px;${low?'background:#ffe3e3;color:#bd0a0a;font-weight:700':''}">${cnt[i]||''}${req?`<small class="muted">/${req}</small>`:''}</div>`;}).join('');
     return `<div style="display:flex;border-bottom:1px solid #e3e6ec;background:#f7f8fb"><div style="width:190px;flex:none;padding:4px 10px;position:sticky;left:0;background:#f7f8fb;z-index:2;border-right:1px solid var(--line);font-size:15px"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${L.taskColor(t)};border:1px solid #999;vertical-align:-2px"></i> ${t}</div><div style="position:relative;width:${W}px;height:34px">${cells}</div></div>`;
   }).join('');
-  return `<div style="padding:8px 10px;font-weight:700;background:#f0f3f8;border-top:2px solid var(--line);position:sticky;left:0;width:190px">人力（每小時・全店）</div>${rows}`;
+  return `<div style="padding:8px 10px;font-weight:700;background:#f0f3f8;border-top:2px solid var(--line);position:sticky;left:0;width:190px">人力（每小時・${ef==='all'?'全店':ef==='ft'?'正職':ef==='pt'?'兼職':ef.slice(2)+'組'}）</div>${rows}`;
 }
 
 /* ---------- 拖拉 ---------- */
