@@ -543,7 +543,7 @@ function detailHTML(withBar){
     : `<div class="box yellow"><div class="big">已達最高折抵 <b>${c.cur.hours} 小時</b></div></div>`;
   const recs = S.receipts.map(r=>`<div class="rec ${r.isNew?'new':''}"><span>${r.name}</span><b>${money(r.amt)}</b></div>`).join('');
   const bar = !withBar ? ''
-    : S.auth   ? `<div class="bound-bar" aria-disabled="true">已綁定授扣</div>`
+    : S.auth   ? `<div class="bound-bar" aria-disabled="true">已綁定授扣（可直接出場）</div>`
     : S.hasPay ? `<button class="bound-bar act" id="barAct">去授權扣款</button>`
     :            `<button class="bound-bar act" id="barAct">綁定全支付，出場自動扣款</button>`;
   return `
