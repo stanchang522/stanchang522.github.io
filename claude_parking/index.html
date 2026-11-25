@@ -680,12 +680,10 @@ function toggleTop(){
 }
 $('topPay').onclick = toggleTop;
 $('topNoPay').onclick = toggleTop;
-// 點下半部（輪播＋商品）：img_1 版本切到停車中；停車中再點一次切回首頁（1-1）
+// 點下半部（輪播＋商品）：img_1／img_4 版本都切到停車中；停車中再點一次切回首頁（1-1）
 function goParking(e){
   if(e.target.closest('#parkCard')) return;
-  if(PARKING){ location.href = location.pathname; return; }
-  if(MODE!=='pay') return;
-  location.href = location.pathname + '?parking';
+  location.href = location.pathname + (PARKING ? '' : '?parking');
 }
 $('restWrap').onclick = goParking;
 $('slot').onclick = goParking;
